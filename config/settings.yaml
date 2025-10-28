@@ -1,0 +1,101 @@
+alerts_dir: data/alerts
+apis:
+- api_key: null
+  enabled: true
+  name: virustotal
+  rate_limit: 100
+  timeout: 30
+- api_key: null
+  enabled: true
+  name: abuseipdb
+  rate_limit: 100
+  timeout: 30
+- api_key: null
+  enabled: true
+  name: otx
+  rate_limit: 100
+  timeout: 30
+dashboard_host: localhost
+dashboard_port: 8501
+data_dir: data
+debug: false
+detection_rules:
+- conditions:
+  - field: event_id
+    operator: equals
+    value: 4625
+  - field: count
+    operator: greater_than
+    value: 5
+  description: Multiple failed login attempts from same IP
+  enabled: true
+  mitre_technique: T1110
+  name: Brute Force Attack
+  severity: High
+- conditions:
+  - field: event_id
+    operator: equals
+    value: 4672
+  - field: user
+    operator: not_in
+    value:
+    - SYSTEM
+    - Administrator
+  description: Suspicious privilege escalation attempt
+  enabled: true
+  mitre_technique: T1078
+  name: Privilege Escalation
+  severity: Critical
+- conditions:
+  - field: process_name
+    operator: contains
+    value: powershell
+  - field: command_line
+    operator: contains
+    value: -enc
+  description: PowerShell execution with suspicious parameters
+  enabled: true
+  mitre_technique: T1059.001
+  name: Suspicious PowerShell
+  severity: Medium
+log_sources:
+- enabled: true
+  frequency: 60
+  parser: windows_evtx
+  path: data/sample_logs/windows.evtx
+  type: evtx
+- enabled: true
+  frequency: 60
+  parser: linux_auth
+  path: data/sample_logs/auth.log
+  type: auth
+- enabled: true
+  frequency: 60
+  parser: json_logs
+  path: data/sample_logs/application.json
+  type: json
+logs_dir: data/logs
+ml_config:
+  contamination: 0.1
+  enabled: true
+  model_type: isolation_forest
+  retrain_frequency: 24
+  training_samples: 100
+project_name: ThreatOps Free
+report_formats:
+- html
+- pdf
+report_frequency: 24
+reports_dir: data/reports
+risk_scoring:
+  base_score: 50
+  intel_multipliers:
+    clean: 0.5
+    malicious: 2.5
+    suspicious: 1.5
+  severity_multipliers:
+    Critical: 3.0
+    High: 2.0
+    Low: 1.0
+    Medium: 1.5
+version: 1.0.0

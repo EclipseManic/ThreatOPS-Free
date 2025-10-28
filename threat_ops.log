@@ -1,0 +1,1009 @@
+2025-10-27 07:59:35,700 - run - INFO - Mode: simulation
+2025-10-27 07:59:37,749 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 07:59:37,758 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 07:59:37,759 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 07:59:37,759 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 07:59:37,770 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 07:59:37,770 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 07:59:37,772 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 07:59:37,772 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 07:59:37,772 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 07:59:37,773 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 07:59:37,773 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 07:59:37,773 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 07:59:37,773 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 07:59:37,773 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 07:59:37,774 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 07:59:37,774 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 07:59:37,775 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 07:59:37,775 - run - INFO - Initialization complete
+2025-10-27 07:59:37,776 - run - INFO - Running attack simulation
+2025-10-27 07:59:37,777 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-27 07:59:37,777 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-27 07:59:37,777 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-27 07:59:37,778 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-27 07:59:37,779 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-27 07:59:37,779 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-27 07:59:37,780 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-27 07:59:37,780 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-27 07:59:37,781 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-27 07:59:37,781 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-27 07:59:37,783 - detection.threat_detector - INFO - Rule engine generated 31 alerts
+2025-10-27 07:59:37,783 - detection.threat_detector - INFO - Training ML model...
+2025-10-27 07:59:37,784 - detection.threat_detector - WARNING - Not enough samples for training: 390 < 1000
+2025-10-27 07:59:37,784 - detection.threat_detector - INFO - ML detector generated 0 alerts
+2025-10-27 07:59:37,785 - detection.threat_detector - INFO - Total unique alerts generated: 27
+2025-10-27 07:59:37,785 - enrichment.intel_enricher - INFO - Enriching 27 alerts with threat intelligence...
+2025-10-27 07:59:37,788 - enrichment.intel_enricher - INFO - Enriched 27 alerts
+2025-10-27 07:59:37,788 - scoring.risk_scorer - INFO - Scoring 27 alerts...
+2025-10-27 07:59:37,789 - scoring.risk_scorer - INFO - Scored 27 alerts
+2025-10-27 07:59:37,790 - run - INFO - Simulation produced 27 scored alerts
+2025-10-27 07:59:37,790 - run - INFO - Mode: test — running pytest
+2025-10-27 07:59:41,284 - run - INFO - Mode: dashboard
+2025-10-27 07:59:41,284 - run - INFO - Starting dashboard (blocking)
+2025-10-27 07:59:42,257 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:00:01,861 - run - INFO - Interrupted by user
+2025-10-27 08:00:20,402 - run - INFO - Mode: simulation
+2025-10-27 08:00:22,219 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:00:22,314 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:00:22,315 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:00:22,315 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:00:22,328 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:00:22,328 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:00:22,330 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:00:22,331 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:00:22,331 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:00:22,331 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:00:22,331 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:00:22,331 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:00:22,332 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:00:22,332 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:00:22,333 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:00:22,333 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:00:22,333 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:00:22,333 - run - INFO - Initialization complete
+2025-10-27 08:00:22,335 - run - INFO - Running attack simulation
+2025-10-27 08:00:22,338 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-27 08:00:22,339 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-27 08:00:22,339 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-27 08:00:22,340 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-27 08:00:22,340 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-27 08:00:22,340 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-27 08:00:22,341 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-27 08:00:22,341 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-27 08:00:22,342 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-27 08:00:22,342 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-27 08:00:22,343 - detection.threat_detector - INFO - Rule engine generated 29 alerts
+2025-10-27 08:00:22,343 - detection.threat_detector - INFO - Training ML model...
+2025-10-27 08:00:22,345 - detection.threat_detector - WARNING - Not enough samples for training: 390 < 1000
+2025-10-27 08:00:22,345 - detection.threat_detector - INFO - ML detector generated 0 alerts
+2025-10-27 08:00:22,346 - detection.threat_detector - INFO - Total unique alerts generated: 21
+2025-10-27 08:00:22,346 - enrichment.intel_enricher - INFO - Enriching 21 alerts with threat intelligence...
+2025-10-27 08:00:22,349 - enrichment.intel_enricher - INFO - Enriched 21 alerts
+2025-10-27 08:00:22,350 - scoring.risk_scorer - INFO - Scoring 21 alerts...
+2025-10-27 08:00:22,350 - scoring.risk_scorer - INFO - Scored 21 alerts
+2025-10-27 08:00:22,351 - run - INFO - Simulation produced 21 scored alerts
+2025-10-27 08:00:22,351 - run - INFO - Mode: test — running pytest
+2025-10-27 08:00:25,343 - run - INFO - Mode: dashboard
+2025-10-27 08:00:25,343 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:00:25,730 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:00:45,972 - run - INFO - Interrupted by user
+2025-10-27 08:08:57,441 - run - INFO - Mode: dashboard
+2025-10-27 08:08:59,524 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:08:59,588 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:08:59,589 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:08:59,589 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:08:59,598 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:08:59,599 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:08:59,600 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:08:59,600 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:08:59,600 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:08:59,600 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:08:59,601 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:08:59,601 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:08:59,601 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:08:59,601 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:08:59,601 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:08:59,601 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:08:59,602 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:08:59,602 - run - INFO - Initialization complete
+2025-10-27 08:08:59,602 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:08:59,985 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:09:20,787 - run - INFO - Interrupted by user
+2025-10-27 08:10:17,285 - run - INFO - Mode: dashboard
+2025-10-27 08:10:19,403 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:10:19,419 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:10:19,420 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:10:19,420 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:10:19,429 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:10:19,429 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:10:19,431 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:10:19,431 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:10:19,431 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:10:19,432 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:10:19,432 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:10:19,432 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:10:19,433 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:10:19,433 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:10:19,434 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:10:19,434 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:10:19,434 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:10:19,434 - run - INFO - Initialization complete
+2025-10-27 08:10:19,435 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:10:19,886 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:10:38,578 - run - INFO - Interrupted by user
+2025-10-27 08:15:23,651 - run - INFO - Mode: dashboard
+2025-10-27 08:15:26,531 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:15:26,544 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:15:26,544 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:15:26,544 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:15:26,554 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:15:26,554 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:15:26,555 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:15:26,555 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:15:26,556 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:15:26,558 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:15:26,558 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:15:26,558 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:15:26,558 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:15:26,559 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:15:26,559 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:15:26,560 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:15:26,560 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:15:26,561 - run - INFO - Initialization complete
+2025-10-27 08:15:26,561 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:15:27,031 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:15:47,496 - run - INFO - Interrupted by user
+2025-10-27 08:16:37,233 - run - INFO - Mode: dashboard
+2025-10-27 08:16:39,106 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:16:39,120 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:16:39,120 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:16:39,120 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:16:39,126 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:16:39,126 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:16:39,127 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:16:39,128 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:16:39,128 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:16:39,128 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:16:39,128 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:16:39,128 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:16:39,128 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:16:39,128 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:16:39,128 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:16:39,128 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:16:39,128 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:16:39,128 - run - INFO - Initialization complete
+2025-10-27 08:16:39,129 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:16:39,492 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:17:27,030 - run - INFO - Interrupted by user
+2025-10-27 08:18:18,356 - run - INFO - Mode: simulation
+2025-10-27 08:18:36,472 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:18:36,482 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:18:36,482 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:18:36,482 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:18:36,516 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:18:36,516 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:18:36,518 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:18:36,518 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:18:36,518 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:18:36,519 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:18:36,519 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:18:36,519 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:18:36,519 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:18:36,519 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:18:36,520 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:18:36,521 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:18:36,522 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:18:36,522 - run - INFO - Initialization complete
+2025-10-27 08:18:36,523 - run - INFO - Running attack simulation
+2025-10-27 08:18:36,524 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-27 08:18:36,525 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-27 08:18:36,525 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-27 08:18:36,527 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-27 08:18:36,528 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-27 08:18:36,528 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-27 08:18:36,529 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-27 08:18:36,529 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-27 08:18:36,530 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-27 08:18:36,530 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-27 08:18:36,532 - detection.threat_detector - INFO - Rule engine generated 25 alerts
+2025-10-27 08:18:36,532 - detection.threat_detector - INFO - Training ML model...
+2025-10-27 08:18:36,534 - detection.threat_detector - WARNING - Not enough samples for training: 390 < 1000
+2025-10-27 08:18:36,534 - detection.threat_detector - INFO - ML detector generated 0 alerts
+2025-10-27 08:18:36,534 - detection.threat_detector - INFO - Total unique alerts generated: 19
+2025-10-27 08:18:36,534 - enrichment.intel_enricher - INFO - Enriching 19 alerts with threat intelligence...
+2025-10-27 08:18:36,538 - enrichment.intel_enricher - INFO - Enriched 19 alerts
+2025-10-27 08:18:36,538 - scoring.risk_scorer - INFO - Scoring 19 alerts...
+2025-10-27 08:18:36,539 - scoring.risk_scorer - INFO - Scored 19 alerts
+2025-10-27 08:18:36,540 - run - INFO - Simulation produced 19 scored alerts
+2025-10-27 08:18:36,541 - run - INFO - Mode: test — running pytest
+2025-10-27 08:18:40,097 - run - INFO - Mode: dashboard
+2025-10-27 08:18:40,097 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:18:40,597 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:18:58,236 - run - INFO - Interrupted by user
+2025-10-27 08:19:32,167 - run - INFO - Mode: dashboard
+2025-10-27 08:19:33,957 - run - ERROR - Fatal error while running: unexpected indent (app.py, line 203)
+Traceback (most recent call last):
+  File "D:\Cusor AI\threat_ops\run.py", line 252, in main
+    soc = ThreatOpsSOC()
+  File "D:\Cusor AI\threat_ops\run.py", line 109, in __init__
+    from dashboard.app import SOCDashboard
+  File "D:\Cusor AI\threat_ops\dashboard\__init__.py", line 3, in <module>
+    from .app import SOCDashboard
+  File "D:\Cusor AI\threat_ops\dashboard\app.py", line 203
+    html = alerts_chart.to_html(include_plotlyjs='cdn', full_html=False, config={})
+IndentationError: unexpected indent
+2025-10-27 08:20:09,302 - run - INFO - Mode: dashboard
+2025-10-27 08:20:12,249 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:20:12,265 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:20:12,266 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:20:12,266 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:20:12,285 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:20:12,285 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:20:12,287 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:20:12,287 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:20:12,288 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:20:12,288 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:20:12,288 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:20:12,288 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:20:12,289 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:20:12,289 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:20:12,290 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:20:12,290 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:20:12,291 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:20:12,291 - run - INFO - Initialization complete
+2025-10-27 08:20:12,293 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:20:13,084 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:21:26,843 - run - INFO - Interrupted by user
+2025-10-27 08:23:21,986 - run - INFO - Mode: dashboard
+2025-10-27 08:23:24,359 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:23:24,372 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:23:24,372 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:23:24,372 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:23:24,383 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:23:24,383 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:23:24,385 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:23:24,385 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:23:24,385 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:23:24,386 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:23:24,386 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:23:24,386 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:23:24,386 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:23:24,386 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:23:24,387 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:23:24,387 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:23:24,388 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:23:24,388 - run - INFO - Initialization complete
+2025-10-27 08:23:24,388 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:23:24,791 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:23:39,114 - run - INFO - Interrupted by user
+2025-10-27 08:24:45,784 - run - INFO - Mode: dashboard
+2025-10-27 08:24:48,071 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:24:48,100 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:24:48,100 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:24:48,101 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:24:48,108 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:24:48,108 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:24:48,109 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:24:48,109 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:24:48,109 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:24:48,110 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:24:48,110 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:24:48,110 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:24:48,110 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:24:48,110 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:24:48,111 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:24:48,111 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:24:48,112 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:24:48,112 - run - INFO - Initialization complete
+2025-10-27 08:24:48,113 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:24:48,556 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:25:02,736 - run - INFO - Interrupted by user
+2025-10-27 08:25:26,229 - run - INFO - Mode: dashboard
+2025-10-27 08:25:29,518 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:25:29,582 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:25:29,582 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:25:29,583 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:25:29,596 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:25:29,597 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:25:29,599 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:25:29,599 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:25:29,599 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:25:29,600 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:25:29,600 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:25:29,600 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:25:29,600 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:25:29,600 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:25:29,601 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:25:29,601 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:25:29,602 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:25:29,602 - run - INFO - Initialization complete
+2025-10-27 08:25:29,603 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:25:30,070 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:25:46,570 - run - INFO - Interrupted by user
+2025-10-27 08:27:59,900 - run - INFO - Mode: dashboard
+2025-10-27 08:28:02,113 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:28:02,126 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:28:02,126 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:28:02,126 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:28:02,137 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:28:02,138 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:28:02,139 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:28:02,139 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:28:02,139 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:28:02,140 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:28:02,140 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:28:02,140 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:28:02,140 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:28:02,140 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:28:02,141 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:28:02,141 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:28:02,142 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:28:02,142 - run - INFO - Initialization complete
+2025-10-27 08:28:02,143 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:28:02,601 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:28:21,751 - run - INFO - Interrupted by user
+2025-10-27 08:35:35,183 - run - INFO - Mode: simulation
+2025-10-27 08:35:37,156 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-27 08:35:37,164 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-27 08:35:37,164 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:35:37,164 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-27 08:35:37,172 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-27 08:35:37,172 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-27 08:35:37,173 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-27 08:35:37,173 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-27 08:35:37,173 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-27 08:35:37,174 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-27 08:35:37,174 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-27 08:35:37,174 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-27 08:35:37,174 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-27 08:35:37,174 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-27 08:35:37,174 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-27 08:35:37,175 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-27 08:35:37,175 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-27 08:35:37,175 - run - INFO - Initialization complete
+2025-10-27 08:35:37,176 - run - INFO - Running attack simulation
+2025-10-27 08:35:37,177 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-27 08:35:37,177 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-27 08:35:37,178 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-27 08:35:37,179 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-27 08:35:37,180 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-27 08:35:37,181 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-27 08:35:37,182 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-27 08:35:37,182 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-27 08:35:37,182 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-27 08:35:37,183 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-27 08:35:37,184 - detection.threat_detector - INFO - Rule engine generated 29 alerts
+2025-10-27 08:35:37,184 - detection.threat_detector - INFO - Training ML model...
+2025-10-27 08:35:37,185 - detection.threat_detector - WARNING - Not enough samples for training: 390 < 1000
+2025-10-27 08:35:37,185 - detection.threat_detector - INFO - ML detector generated 0 alerts
+2025-10-27 08:35:37,186 - detection.threat_detector - INFO - Total unique alerts generated: 23
+2025-10-27 08:35:37,186 - enrichment.intel_enricher - INFO - Enriching 23 alerts with threat intelligence...
+2025-10-27 08:35:37,188 - enrichment.intel_enricher - INFO - Enriched 23 alerts
+2025-10-27 08:35:37,188 - scoring.risk_scorer - INFO - Scoring 23 alerts...
+2025-10-27 08:35:37,189 - scoring.risk_scorer - INFO - Scored 23 alerts
+2025-10-27 08:35:37,189 - run - INFO - Simulation produced 23 scored alerts
+2025-10-27 08:35:37,189 - run - INFO - Mode: test — running pytest
+2025-10-27 08:35:40,481 - run - INFO - Mode: dashboard
+2025-10-27 08:35:40,481 - run - INFO - Starting dashboard (blocking)
+2025-10-27 08:35:40,873 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-27 08:38:04,447 - run - INFO - Interrupted by user
+2025-10-28 05:51:51,388 - run - INFO - Mode: simulation
+2025-10-28 05:51:56,494 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 05:51:56,514 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 05:51:56,515 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 05:51:56,515 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 05:51:56,536 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 05:51:56,536 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 05:51:56,538 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 05:51:56,539 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 05:51:56,539 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 05:51:56,539 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 05:51:56,540 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 05:51:56,540 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 05:51:56,540 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 05:51:56,541 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 05:51:56,542 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 05:51:56,542 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 05:51:56,542 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 05:51:56,543 - run - INFO - Initialization complete
+2025-10-28 05:51:56,544 - run - INFO - Running attack simulation
+2025-10-28 05:51:56,545 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 05:51:56,546 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 05:51:56,546 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 05:51:56,547 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 05:51:56,548 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 05:51:56,549 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 05:51:56,549 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 05:51:56,550 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 05:51:56,550 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 05:51:56,551 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 05:51:56,551 - detection.threat_detector - INFO - Filtered 17 whitelisted log entries
+2025-10-28 05:51:56,554 - detection.threat_detector - INFO - Rule engine generated 30 alerts
+2025-10-28 05:51:56,554 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 05:51:56,555 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 05:51:56,776 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 05:51:56,798 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 05:51:56,802 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 05:51:56,830 - detection.threat_detector - INFO - Total unique alerts generated: 59
+2025-10-28 05:51:56,831 - enrichment.intel_enricher - INFO - Enriching 59 alerts with threat intelligence...
+2025-10-28 05:51:56,856 - enrichment.intel_enricher - INFO - Enriched 59 alerts
+2025-10-28 05:51:56,857 - scoring.risk_scorer - INFO - Scoring 59 alerts...
+2025-10-28 05:51:56,859 - scoring.risk_scorer - INFO - Scored 59 alerts
+2025-10-28 05:51:56,860 - run - INFO - Simulation produced 59 scored alerts
+2025-10-28 05:51:56,861 - run - INFO - Mode: test — running pytest
+2025-10-28 05:52:02,442 - run - INFO - Mode: dashboard
+2025-10-28 05:52:02,443 - run - INFO - Starting dashboard (blocking)
+2025-10-28 05:52:03,211 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-28 05:53:54,208 - run - INFO - Interrupted by user
+2025-10-28 05:56:06,862 - run - INFO - Mode: simulation
+2025-10-28 05:56:10,292 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 05:56:10,457 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 05:56:10,457 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 05:56:10,458 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 05:56:10,475 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 05:56:10,475 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 05:56:10,477 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 05:56:10,477 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 05:56:10,477 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 05:56:10,477 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 05:56:10,477 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 05:56:10,478 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 05:56:10,478 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 05:56:10,478 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 05:56:10,478 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 05:56:10,479 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 05:56:10,479 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 05:56:10,480 - run - INFO - Initialization complete
+2025-10-28 05:56:10,481 - run - INFO - Running attack simulation
+2025-10-28 05:56:10,482 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 05:56:10,483 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 05:56:10,484 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 05:56:10,486 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 05:56:10,487 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 05:56:10,488 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 05:56:10,490 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 05:56:10,490 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 05:56:10,491 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 05:56:10,491 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 05:56:10,492 - detection.threat_detector - INFO - Filtered 14 whitelisted log entries
+2025-10-28 05:56:10,496 - detection.threat_detector - INFO - Rule engine generated 26 alerts
+2025-10-28 05:56:10,497 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 05:56:10,498 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 05:56:10,668 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 05:56:10,688 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 05:56:10,689 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 05:56:10,690 - detection.threat_detector - INFO - Total unique alerts generated: 58
+2025-10-28 05:56:10,690 - enrichment.intel_enricher - INFO - Enriching 58 alerts with threat intelligence...
+2025-10-28 05:56:10,712 - enrichment.intel_enricher - INFO - Enriched 58 alerts
+2025-10-28 05:56:10,712 - scoring.risk_scorer - INFO - Scoring 58 alerts...
+2025-10-28 05:56:10,716 - scoring.risk_scorer - INFO - Scored 58 alerts
+2025-10-28 05:56:10,717 - run - INFO - Simulation produced 58 scored alerts
+2025-10-28 05:56:10,718 - run - INFO - Run completed successfully
+2025-10-28 05:56:40,917 - run - INFO - Mode: simulation
+2025-10-28 05:56:44,383 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 05:56:44,440 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 05:56:44,442 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 05:56:44,442 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 05:56:44,460 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 05:56:44,460 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 05:56:44,463 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 05:56:44,463 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 05:56:44,464 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 05:56:44,464 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 05:56:44,465 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 05:56:44,465 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 05:56:44,465 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 05:56:44,466 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 05:56:44,466 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 05:56:44,466 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 05:56:44,467 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 05:56:44,468 - run - INFO - Initialization complete
+2025-10-28 05:56:44,471 - run - INFO - Running attack simulation
+2025-10-28 05:56:44,475 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 05:56:44,475 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 05:56:44,476 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 05:56:44,478 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 05:56:44,479 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 05:56:44,480 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 05:56:44,481 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 05:56:44,482 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 05:56:44,482 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 05:56:44,483 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 05:56:44,484 - detection.threat_detector - INFO - Filtered 14 whitelisted log entries
+2025-10-28 05:56:44,486 - detection.threat_detector - INFO - Rule engine generated 35 alerts
+2025-10-28 05:56:44,487 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 05:56:44,488 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 05:56:44,657 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 05:56:44,682 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 05:56:44,683 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 05:56:44,683 - detection.threat_detector - INFO - Total unique alerts generated: 62
+2025-10-28 05:56:44,684 - enrichment.intel_enricher - INFO - Enriching 62 alerts with threat intelligence...
+2025-10-28 05:56:44,712 - enrichment.intel_enricher - INFO - Enriched 62 alerts
+2025-10-28 05:56:44,713 - scoring.risk_scorer - INFO - Scoring 62 alerts...
+2025-10-28 05:56:44,715 - scoring.risk_scorer - INFO - Scored 62 alerts
+2025-10-28 05:56:44,717 - run - INFO - Simulation produced 62 scored alerts
+2025-10-28 05:56:44,717 - run - INFO - Run completed successfully
+2025-10-28 06:01:22,379 - run - INFO - Mode: simulation
+2025-10-28 06:01:25,875 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:01:25,927 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:01:25,928 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:01:25,928 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:01:25,943 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:01:25,944 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:01:25,946 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:01:25,946 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:01:25,946 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:01:25,947 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:01:25,947 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:01:25,947 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:01:25,947 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:01:25,948 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:01:25,948 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:01:25,948 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:01:25,949 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:01:25,949 - run - INFO - Initialization complete
+2025-10-28 06:01:25,952 - run - INFO - Running attack simulation
+2025-10-28 06:01:25,953 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:01:25,954 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:01:25,954 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:01:25,955 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:01:25,956 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:01:25,956 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:01:25,957 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:01:25,957 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:01:25,958 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:01:25,958 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:01:25,959 - detection.threat_detector - INFO - Filtered 16 whitelisted log entries
+2025-10-28 06:01:25,961 - detection.threat_detector - INFO - Rule engine generated 23 alerts
+2025-10-28 06:01:25,962 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:01:25,962 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:01:26,144 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:01:26,162 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:01:26,162 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:01:26,163 - detection.threat_detector - INFO - Total unique alerts generated: 53
+2025-10-28 06:01:26,164 - enrichment.intel_enricher - INFO - Enriching 53 alerts with threat intelligence...
+2025-10-28 06:01:26,189 - enrichment.intel_enricher - INFO - Enriched 53 alerts
+2025-10-28 06:01:26,191 - scoring.risk_scorer - INFO - Scoring 53 alerts...
+2025-10-28 06:01:26,193 - scoring.risk_scorer - INFO - Scored 53 alerts
+2025-10-28 06:01:26,194 - run - INFO - Simulation produced 53 scored alerts
+2025-10-28 06:01:26,196 - run - INFO - Run completed successfully
+2025-10-28 06:01:42,080 - run - INFO - Mode: simulation
+2025-10-28 06:01:45,623 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:01:45,733 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:01:45,734 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:01:45,735 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:01:45,749 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:01:45,749 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:01:45,751 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:01:45,752 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:01:45,752 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:01:45,752 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:01:45,753 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:01:45,754 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:01:45,755 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:01:45,755 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:01:45,757 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:01:45,757 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:01:45,758 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:01:45,759 - run - INFO - Initialization complete
+2025-10-28 06:01:45,761 - run - INFO - Running attack simulation
+2025-10-28 06:01:45,767 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:01:45,767 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:01:45,768 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:01:45,769 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:01:45,770 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:01:45,773 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:01:45,774 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:01:45,774 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:01:45,776 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:01:45,776 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:01:45,777 - detection.threat_detector - INFO - Filtered 20 whitelisted log entries
+2025-10-28 06:01:45,778 - detection.threat_detector - INFO - Rule engine generated 26 alerts
+2025-10-28 06:01:45,779 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:01:45,779 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:01:45,957 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:01:45,977 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:01:45,978 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:01:45,978 - detection.threat_detector - INFO - Total unique alerts generated: 56
+2025-10-28 06:01:45,979 - enrichment.intel_enricher - INFO - Enriching 56 alerts with threat intelligence...
+2025-10-28 06:01:46,000 - enrichment.intel_enricher - INFO - Enriched 56 alerts
+2025-10-28 06:01:46,001 - scoring.risk_scorer - INFO - Scoring 56 alerts...
+2025-10-28 06:01:46,004 - scoring.risk_scorer - INFO - Scored 56 alerts
+2025-10-28 06:01:46,006 - run - INFO - Simulation produced 56 scored alerts
+2025-10-28 06:01:46,007 - run - INFO - Mode: test — running pytest
+2025-10-28 06:01:51,392 - run - INFO - Mode: dashboard
+2025-10-28 06:01:51,392 - run - INFO - Starting dashboard (blocking)
+2025-10-28 06:01:52,023 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-28 06:05:03,853 - run - INFO - Interrupted by user
+2025-10-28 06:08:28,400 - run - INFO - Mode: simulation
+2025-10-28 06:08:28,403 - run - ERROR - Fatal error while running: No module named 'yaml'
+Traceback (most recent call last):
+  File "D:\Cusor AI\threat_ops\run.py", line 308, in main
+    soc = ThreatOpsSOC()
+  File "D:\Cusor AI\threat_ops\run.py", line 103, in __init__
+    from config.settings import Settings
+  File "D:\Cusor AI\threat_ops\config\__init__.py", line 3, in <module>
+    from .settings import Settings, LogSourceConfig, DetectionRuleConfig, APIConfig, MLConfig, RiskScoringConfig
+  File "D:\Cusor AI\threat_ops\config\settings.py", line 4, in <module>
+    import yaml
+ModuleNotFoundError: No module named 'yaml'
+2025-10-28 06:08:49,171 - run - INFO - Installing dependencies from requirements.txt (this may take a while)
+2025-10-28 06:10:01,871 - run - INFO - Mode: simulation
+2025-10-28 06:10:05,644 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:10:05,687 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:10:05,688 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:10:05,688 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:10:05,700 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:10:05,700 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:10:05,702 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:10:05,702 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:10:05,702 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:10:05,702 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:10:05,702 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:10:05,702 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:10:05,702 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:10:05,703 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:10:05,703 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:10:05,703 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:10:05,703 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:10:05,704 - reporting.report_generator - INFO - Initializing report generator...
+2025-10-28 06:10:05,704 - reporting.report_generator - INFO - Report generator initialized successfully
+2025-10-28 06:10:05,704 - run - INFO - Initialization complete
+2025-10-28 06:10:05,706 - run - INFO - Running attack simulation
+2025-10-28 06:10:05,707 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:10:05,707 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:10:05,708 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:10:05,708 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:10:05,709 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:10:05,709 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:10:05,710 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:10:05,710 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:10:05,710 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:10:05,710 - run - INFO - Generated 390 simulated log entries
+2025-10-28 06:10:05,718 - collectors.log_collector - INFO - Saved 390 logs to data\logs\simulated_logs.json
+2025-10-28 06:10:05,718 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:10:05,718 - detection.threat_detector - INFO - Filtered 11 whitelisted log entries
+2025-10-28 06:10:05,719 - detection.threat_detector - INFO - Rule engine generated 30 alerts
+2025-10-28 06:10:05,719 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:10:05,720 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:10:05,934 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:10:05,951 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:10:05,952 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:10:05,952 - detection.threat_detector - INFO - Total unique alerts generated: 61
+2025-10-28 06:10:05,952 - run - INFO - Detected 61 alerts
+2025-10-28 06:10:05,952 - enrichment.intel_enricher - INFO - Enriching 61 alerts with threat intelligence...
+2025-10-28 06:10:05,971 - enrichment.intel_enricher - INFO - Enriched 61 alerts
+2025-10-28 06:10:05,972 - run - INFO - Enriched 61 alerts with threat intelligence
+2025-10-28 06:10:05,972 - scoring.risk_scorer - INFO - Scoring 61 alerts...
+2025-10-28 06:10:05,974 - scoring.risk_scorer - INFO - Scored 61 alerts
+2025-10-28 06:10:05,974 - run - INFO - Scored 61 alerts with risk scores
+2025-10-28 06:10:05,981 - run - INFO - Saved 61 alerts to data\alerts\alerts_20251028_061005.json
+2025-10-28 06:10:05,983 - run - INFO - Simulation produced 61 scored alerts
+2025-10-28 06:10:05,984 - run - INFO - Generating report for simulated threats...
+2025-10-28 06:10:05,984 - run - INFO - Generating report
+2025-10-28 06:10:05,985 - reporting.report_generator - INFO - Generating daily SOC report...
+2025-10-28 06:10:06,994 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:10:06,998 - run - ERROR - Fatal error while running: 'dict' object has no attribute 'title'
+Traceback (most recent call last):
+  File "D:\Cusor AI\threat_ops\run.py", line 316, in main
+    report_path = asyncio.run(soc.generate_report())
+  File "C:\Users\Manichand Gupta\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\Manichand Gupta\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Manichand Gupta\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "D:\Cusor AI\threat_ops\run.py", line 220, in generate_report
+    path = await self.report_generator.generate_daily_report()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Cusor AI\threat_ops\reporting\report_generator.py", line 984, in generate_daily_report
+    pdf_content = self.pdf_generator.generate_report(report_data)
+  File "D:\Cusor AI\threat_ops\reporting\report_generator.py", line 526, in generate_report
+    content.append(Paragraph(f"<b>{rec.title}</b> - {rec.priority}", self.styles['Normal']))
+                                   ^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'title'
+2025-10-28 06:10:37,055 - run - INFO - Mode: simulation
+2025-10-28 06:10:40,984 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:10:41,000 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:10:41,001 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:10:41,001 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:10:41,011 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:10:41,011 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:10:41,012 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:10:41,012 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:10:41,012 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:10:41,012 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:10:41,013 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:10:41,013 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:10:41,013 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:10:41,013 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:10:41,013 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:10:41,013 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:10:41,013 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:10:41,013 - reporting.report_generator - INFO - Initializing report generator...
+2025-10-28 06:10:41,014 - reporting.report_generator - INFO - Report generator initialized successfully
+2025-10-28 06:10:41,014 - run - INFO - Initialization complete
+2025-10-28 06:10:41,016 - run - INFO - Running attack simulation
+2025-10-28 06:10:41,018 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:10:41,018 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:10:41,019 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:10:41,019 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:10:41,020 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:10:41,020 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:10:41,021 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:10:41,021 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:10:41,021 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:10:41,021 - run - INFO - Generated 390 simulated log entries
+2025-10-28 06:10:41,027 - collectors.log_collector - INFO - Saved 390 logs to data\logs\simulated_logs.json
+2025-10-28 06:10:41,027 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:10:41,027 - detection.threat_detector - INFO - Filtered 20 whitelisted log entries
+2025-10-28 06:10:41,029 - detection.threat_detector - INFO - Rule engine generated 28 alerts
+2025-10-28 06:10:41,029 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:10:41,029 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:10:41,190 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:10:41,207 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:10:41,207 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:10:41,207 - detection.threat_detector - INFO - Total unique alerts generated: 59
+2025-10-28 06:10:41,207 - run - INFO - Detected 59 alerts
+2025-10-28 06:10:41,208 - enrichment.intel_enricher - INFO - Enriching 59 alerts with threat intelligence...
+2025-10-28 06:10:41,229 - enrichment.intel_enricher - INFO - Enriched 59 alerts
+2025-10-28 06:10:41,229 - run - INFO - Enriched 59 alerts with threat intelligence
+2025-10-28 06:10:41,230 - scoring.risk_scorer - INFO - Scoring 59 alerts...
+2025-10-28 06:10:41,232 - scoring.risk_scorer - INFO - Scored 59 alerts
+2025-10-28 06:10:41,232 - run - INFO - Scored 59 alerts with risk scores
+2025-10-28 06:10:41,241 - run - INFO - Saved 59 alerts to data\alerts\alerts_20251028_061041.json
+2025-10-28 06:10:41,242 - run - INFO - Simulation produced 59 scored alerts
+2025-10-28 06:10:41,242 - run - INFO - Generating report for simulated threats...
+2025-10-28 06:10:41,243 - run - INFO - Generating report
+2025-10-28 06:10:41,243 - reporting.report_generator - INFO - Generating daily SOC report...
+2025-10-28 06:10:42,425 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:10:42,448 - reporting.report_generator - INFO - Daily report generated: ['data\\reports\\daily_summary_20251028_004041.html', 'data\\reports\\daily_summary_20251028_004041.pdf', 'data\\reports\\daily_summary_20251028_004041.json']
+2025-10-28 06:10:42,451 - run - INFO - Report generated at: data\reports\daily_summary_20251028_004041.html
+2025-10-28 06:10:42,451 - run - INFO - Run completed successfully
+2025-10-28 06:12:23,307 - run - INFO - Mode: simulation
+2025-10-28 06:12:27,333 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:12:27,390 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:12:27,391 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:12:27,391 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:12:27,402 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:12:27,403 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:12:27,404 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:12:27,404 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:12:27,404 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:12:27,404 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:12:27,405 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:12:27,405 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:12:27,405 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:12:27,405 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:12:27,405 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:12:27,405 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:12:27,406 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:12:27,406 - reporting.report_generator - INFO - Initializing report generator...
+2025-10-28 06:12:27,406 - reporting.report_generator - INFO - Report generator initialized successfully
+2025-10-28 06:12:27,406 - run - INFO - Initialization complete
+2025-10-28 06:12:27,408 - run - INFO - Running attack simulation
+2025-10-28 06:12:27,408 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:12:27,409 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:12:27,409 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:12:27,410 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:12:27,410 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:12:27,410 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:12:27,411 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:12:27,411 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:12:27,411 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:12:27,411 - run - INFO - Generated 390 simulated log entries
+2025-10-28 06:12:27,418 - collectors.log_collector - INFO - Saved 390 logs to data\logs\simulated_logs.json
+2025-10-28 06:12:27,426 - simulation.attack_simulator - INFO - Saved 390 simulation logs to data\simulations\simulation_all_scenarios_20251028_061227_20251028_061227.json
+2025-10-28 06:12:27,426 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:12:27,426 - detection.threat_detector - INFO - Filtered 10 whitelisted log entries
+2025-10-28 06:12:27,427 - detection.threat_detector - INFO - Rule engine generated 23 alerts
+2025-10-28 06:12:27,427 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:12:27,428 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:12:27,584 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:12:27,605 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:12:27,605 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:12:27,606 - detection.threat_detector - INFO - Total unique alerts generated: 55
+2025-10-28 06:12:27,606 - run - INFO - Detected 55 alerts
+2025-10-28 06:12:27,606 - enrichment.intel_enricher - INFO - Enriching 55 alerts with threat intelligence...
+2025-10-28 06:12:27,625 - enrichment.intel_enricher - INFO - Enriched 55 alerts
+2025-10-28 06:12:27,625 - run - INFO - Enriched 55 alerts with threat intelligence
+2025-10-28 06:12:27,625 - scoring.risk_scorer - INFO - Scoring 55 alerts...
+2025-10-28 06:12:27,626 - scoring.risk_scorer - INFO - Scored 55 alerts
+2025-10-28 06:12:27,626 - run - INFO - Scored 55 alerts with risk scores
+2025-10-28 06:12:27,632 - run - INFO - Saved 55 alerts to data\alerts\alerts_20251028_061227.json
+2025-10-28 06:12:27,633 - run - INFO - Simulation produced 55 scored alerts
+2025-10-28 06:12:27,633 - run - INFO - Generating report for simulated threats...
+2025-10-28 06:12:27,634 - run - INFO - Generating report
+2025-10-28 06:12:27,634 - reporting.report_generator - INFO - Generating daily SOC report...
+2025-10-28 06:12:27,757 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:12:27,793 - reporting.report_generator - INFO - Daily report generated: ['data\\reports\\daily_summary_20251028_004227.html', 'data\\reports\\daily_summary_20251028_004227.pdf', 'data\\reports\\daily_summary_20251028_004227.json']
+2025-10-28 06:12:27,795 - run - INFO - Report generated at: data\reports\daily_summary_20251028_004227.html
+2025-10-28 06:12:27,795 - run - INFO - Run completed successfully
+2025-10-28 06:13:23,471 - run - INFO - Mode: simulation
+2025-10-28 06:13:27,328 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:13:27,382 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:13:27,382 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:13:27,383 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:13:27,394 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:13:27,394 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:13:27,395 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:13:27,396 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:13:27,396 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:13:27,396 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:13:27,396 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:13:27,396 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:13:27,396 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:13:27,397 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:13:27,397 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:13:27,397 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:13:27,397 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:13:27,398 - reporting.report_generator - INFO - Initializing report generator...
+2025-10-28 06:13:27,398 - reporting.report_generator - INFO - Report generator initialized successfully
+2025-10-28 06:13:27,398 - run - INFO - Initialization complete
+2025-10-28 06:13:27,400 - run - INFO - Running attack simulation
+2025-10-28 06:13:27,401 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:13:27,402 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:13:27,403 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:13:27,405 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:13:27,406 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:13:27,406 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:13:27,407 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:13:27,407 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:13:27,407 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:13:27,408 - run - INFO - Generated 390 simulated log entries
+2025-10-28 06:13:27,419 - collectors.log_collector - INFO - Saved 390 logs to data\logs\simulated_logs.json
+2025-10-28 06:13:27,426 - simulation.attack_simulator - INFO - Saved 390 simulation logs to data\simulations\simulation_all_scenarios_20251028_061327_20251028_061327.json
+2025-10-28 06:13:27,426 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:13:27,427 - detection.threat_detector - INFO - Filtered 15 whitelisted log entries
+2025-10-28 06:13:27,429 - detection.threat_detector - INFO - Rule engine generated 30 alerts
+2025-10-28 06:13:27,429 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:13:27,431 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:13:27,589 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:13:27,616 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:13:27,616 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:13:27,617 - detection.threat_detector - INFO - Total unique alerts generated: 59
+2025-10-28 06:13:27,617 - run - INFO - Detected 59 alerts
+2025-10-28 06:13:27,618 - enrichment.intel_enricher - INFO - Enriching 59 alerts with threat intelligence...
+2025-10-28 06:13:27,635 - enrichment.intel_enricher - INFO - Enriched 59 alerts
+2025-10-28 06:13:27,636 - run - INFO - Enriched 59 alerts with threat intelligence
+2025-10-28 06:13:27,636 - scoring.risk_scorer - INFO - Scoring 59 alerts...
+2025-10-28 06:13:27,639 - scoring.risk_scorer - INFO - Scored 59 alerts
+2025-10-28 06:13:27,644 - run - INFO - Scored 59 alerts with risk scores
+2025-10-28 06:13:27,652 - run - INFO - Saved 59 alerts to data\alerts\alerts_20251028_061327.json
+2025-10-28 06:13:27,653 - run - INFO - Simulation produced 59 scored alerts
+2025-10-28 06:13:27,654 - run - INFO - Generating report for simulated threats...
+2025-10-28 06:13:27,656 - run - INFO - Generating report
+2025-10-28 06:13:27,656 - reporting.report_generator - INFO - Generating daily SOC report...
+2025-10-28 06:13:27,795 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:13:27,859 - reporting.report_generator - INFO - Daily report generated: ['data\\reports\\daily_summary_20251028_004327.html', 'data\\reports\\daily_summary_20251028_004327.pdf', 'data\\reports\\daily_summary_20251028_004327.json']
+2025-10-28 06:13:27,861 - run - INFO - Report generated at: data\reports\daily_summary_20251028_004327.html
+2025-10-28 06:13:27,862 - run - INFO - Mode: test — running pytest
+2025-10-28 06:13:33,728 - run - INFO - Mode: dashboard
+2025-10-28 06:13:33,729 - run - INFO - Starting dashboard (blocking)
+2025-10-28 06:13:34,621 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-28 06:14:00,318 - run - INFO - Mode: simulation
+2025-10-28 06:14:34,444 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:14:34,504 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:14:34,505 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:14:34,505 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:14:34,523 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:14:34,523 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:14:34,525 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:14:34,525 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:14:34,525 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:14:34,526 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:14:34,526 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:14:34,526 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:14:34,526 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:14:34,526 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:14:34,527 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:14:34,527 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:14:34,528 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:14:34,528 - reporting.report_generator - INFO - Initializing report generator...
+2025-10-28 06:14:34,528 - reporting.report_generator - INFO - Report generator initialized successfully
+2025-10-28 06:14:34,529 - run - INFO - Initialization complete
+2025-10-28 06:14:34,531 - run - INFO - Running attack simulation
+2025-10-28 06:14:34,533 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:14:34,533 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:14:34,534 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:14:34,536 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:14:34,537 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:14:34,537 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:14:34,539 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:14:34,539 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:14:34,539 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:14:34,540 - run - INFO - Generated 390 simulated log entries
+2025-10-28 06:14:34,557 - collectors.log_collector - INFO - Saved 390 logs to data\logs\simulated_logs.json
+2025-10-28 06:14:34,557 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:14:34,557 - detection.threat_detector - INFO - Filtered 21 whitelisted log entries
+2025-10-28 06:14:34,561 - detection.threat_detector - INFO - Rule engine generated 18 alerts
+2025-10-28 06:14:34,561 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:14:34,562 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:14:34,897 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:14:34,931 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:14:34,932 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:14:34,932 - detection.threat_detector - INFO - Total unique alerts generated: 49
+2025-10-28 06:14:34,933 - run - INFO - Detected 49 alerts
+2025-10-28 06:14:34,933 - enrichment.intel_enricher - INFO - Enriching 49 alerts with threat intelligence...
+2025-10-28 06:14:34,982 - enrichment.intel_enricher - INFO - Enriched 49 alerts
+2025-10-28 06:14:34,983 - run - INFO - Enriched 49 alerts with threat intelligence
+2025-10-28 06:14:34,983 - scoring.risk_scorer - INFO - Scoring 49 alerts...
+2025-10-28 06:14:34,987 - scoring.risk_scorer - INFO - Scored 49 alerts
+2025-10-28 06:14:34,987 - run - INFO - Scored 49 alerts with risk scores
+2025-10-28 06:14:35,002 - run - INFO - Saved 49 alerts to data\alerts\alerts_20251028_061434.json
+2025-10-28 06:14:35,003 - run - INFO - Simulation produced 49 scored alerts
+2025-10-28 06:14:35,004 - run - INFO - Generating report for simulated threats...
+2025-10-28 06:14:35,005 - run - INFO - Generating report
+2025-10-28 06:14:35,006 - reporting.report_generator - INFO - Generating daily SOC report...
+2025-10-28 06:14:35,205 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:14:35,326 - reporting.report_generator - INFO - Daily report generated: ['data\\reports\\daily_summary_20251028_004435.html', 'data\\reports\\daily_summary_20251028_004435.pdf', 'data\\reports\\daily_summary_20251028_004435.json']
+2025-10-28 06:14:35,331 - run - INFO - Report generated at: data\reports\daily_summary_20251028_004435.html
+2025-10-28 06:14:35,331 - run - INFO - Run completed successfully
+2025-10-28 06:16:02,280 - run - INFO - Interrupted by user
+2025-10-28 06:17:37,073 - run - INFO - Mode: simulation
+2025-10-28 06:17:40,593 - detection.threat_detector - INFO - Loaded 3 detection rules
+2025-10-28 06:17:40,647 - simulation.attack_simulator - INFO - Loaded 8 attack scenarios
+2025-10-28 06:17:40,648 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:17:40,648 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:17:40,661 - run - INFO - Initializing ThreatOps SOC components...
+2025-10-28 06:17:40,662 - collectors.log_collector - INFO - Initializing log collector...
+2025-10-28 06:17:40,665 - collectors.log_collector - INFO - Log collector initialized successfully
+2025-10-28 06:17:40,665 - detection.threat_detector - INFO - Initializing threat detector...
+2025-10-28 06:17:40,666 - detection.threat_detector - INFO - Initializing ML detector...
+2025-10-28 06:17:40,666 - detection.threat_detector - INFO - ML detector initialized successfully
+2025-10-28 06:17:40,667 - detection.threat_detector - INFO - Threat detector initialized successfully
+2025-10-28 06:17:40,667 - enrichment.intel_enricher - INFO - Initializing threat intelligence enricher...
+2025-10-28 06:17:40,667 - enrichment.intel_enricher - INFO - Initialized 0 threat intelligence APIs
+2025-10-28 06:17:40,668 - simulation.attack_simulator - INFO - Initializing attack simulator...
+2025-10-28 06:17:40,669 - simulation.attack_simulator - INFO - Attack simulator initialized successfully
+2025-10-28 06:17:40,669 - scoring.risk_scorer - INFO - Initializing risk scorer...
+2025-10-28 06:17:40,670 - scoring.risk_scorer - INFO - Risk scorer initialized successfully
+2025-10-28 06:17:40,670 - reporting.report_generator - INFO - Initializing report generator...
+2025-10-28 06:17:40,671 - reporting.report_generator - INFO - Report generator initialized successfully
+2025-10-28 06:17:40,671 - run - INFO - Initialization complete
+2025-10-28 06:17:40,674 - run - INFO - Running attack simulation
+2025-10-28 06:17:40,677 - simulation.attack_simulator - INFO - Generated 100 logs for scenario: Brute Force Attack
+2025-10-28 06:17:40,678 - simulation.attack_simulator - INFO - Generated 20 logs for scenario: Privilege Escalation
+2025-10-28 06:17:40,679 - simulation.attack_simulator - INFO - Generated 30 logs for scenario: Suspicious PowerShell
+2025-10-28 06:17:40,680 - simulation.attack_simulator - INFO - Generated 80 logs for scenario: Lateral Movement
+2025-10-28 06:17:40,681 - simulation.attack_simulator - INFO - Generated 40 logs for scenario: Data Exfiltration
+2025-10-28 06:17:40,682 - simulation.attack_simulator - INFO - Generated 25 logs for scenario: Malware Execution
+2025-10-28 06:17:40,683 - simulation.attack_simulator - INFO - Generated 60 logs for scenario: Command and Control
+2025-10-28 06:17:40,684 - simulation.attack_simulator - INFO - Generated 35 logs for scenario: Persistence
+2025-10-28 06:17:40,684 - simulation.attack_simulator - INFO - Total attack logs generated: 390
+2025-10-28 06:17:40,686 - run - INFO - Generated 390 simulated log entries
+2025-10-28 06:17:40,712 - collectors.log_collector - INFO - Saved 390 logs to data\logs\simulated_logs.json
+2025-10-28 06:17:40,725 - simulation.attack_simulator - INFO - Saved 390 simulation logs to data\simulations\simulation_all_scenarios_20251028_061740_20251028_061740.json
+2025-10-28 06:17:40,726 - detection.threat_detector - INFO - Analyzing 390 log entries...
+2025-10-28 06:17:40,726 - detection.threat_detector - INFO - Filtered 11 whitelisted log entries
+2025-10-28 06:17:40,729 - detection.threat_detector - INFO - Rule engine generated 36 alerts
+2025-10-28 06:17:40,730 - detection.threat_detector - INFO - Training ML model and building behavioral baseline...
+2025-10-28 06:17:40,730 - detection.threat_detector - INFO - Built baseline for 10 users and 10 hosts
+2025-10-28 06:17:40,914 - detection.threat_detector - INFO - ML model trained successfully
+2025-10-28 06:17:40,934 - detection.threat_detector - INFO - ML detector generated 39 anomaly alerts
+2025-10-28 06:17:40,935 - detection.threat_detector - INFO - ML detector generated 39 alerts
+2025-10-28 06:17:40,935 - detection.threat_detector - INFO - Total unique alerts generated: 59
+2025-10-28 06:17:40,936 - run - INFO - Detected 59 alerts
+2025-10-28 06:17:40,936 - enrichment.intel_enricher - INFO - Enriching 59 alerts with threat intelligence...
+2025-10-28 06:17:40,958 - enrichment.intel_enricher - INFO - Enriched 59 alerts
+2025-10-28 06:17:40,959 - run - INFO - Enriched 59 alerts with threat intelligence
+2025-10-28 06:17:40,959 - scoring.risk_scorer - INFO - Scoring 59 alerts...
+2025-10-28 06:17:40,961 - scoring.risk_scorer - INFO - Scored 59 alerts
+2025-10-28 06:17:40,961 - run - INFO - Scored 59 alerts with risk scores
+2025-10-28 06:17:41,015 - run - INFO - Saved 59 alerts to data\alerts\alerts_20251028_061740.json
+2025-10-28 06:17:41,016 - run - INFO - Simulation produced 59 scored alerts
+2025-10-28 06:17:41,016 - run - INFO - Generating report for simulated threats...
+2025-10-28 06:17:41,038 - run - INFO - Generating report
+2025-10-28 06:17:41,039 - reporting.report_generator - INFO - Generating daily SOC report...
+2025-10-28 06:17:42,157 - scoring.risk_scorer - INFO - Loaded 8 MITRE ATT&CK techniques
+2025-10-28 06:17:42,206 - reporting.report_generator - INFO - Daily report generated: ['data\\reports\\daily_summary_20251028_004741.html', 'data\\reports\\daily_summary_20251028_004741.pdf', 'data\\reports\\daily_summary_20251028_004741.json']
+2025-10-28 06:17:42,210 - run - INFO - Report generated at: data\reports\daily_summary_20251028_004741.html
+2025-10-28 06:17:42,210 - run - INFO - Mode: test — running pytest
+2025-10-28 06:17:47,037 - run - INFO - Mode: dashboard
+2025-10-28 06:17:47,037 - run - INFO - Starting dashboard (blocking)
+2025-10-28 06:17:47,686 - run - INFO - Spawning Streamlit to serve the dashboard: D:\Cusor AI\threat_ops\.venv\Scripts\python.exe -m streamlit run D:\Cusor AI\threat_ops\run_streamlit.py -- --mode dashboard
+2025-10-28 06:20:18,567 - run - INFO - Interrupted by user

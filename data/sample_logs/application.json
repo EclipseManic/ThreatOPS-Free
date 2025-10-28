@@ -1,0 +1,2 @@
+{"timestamp": "2025-10-26T11:17:47.857444+00:00", "host": "app-server", "user": "service_account", "event_id": 1001, "ip": "10.0.0.50", "message": "Application started successfully", "event_type": "application_start", "severity": "info"}
+{"timestamp": "2025-10-26T11:17:47.857461+00:00", "host": "app-server", "user": "user123", "event_id": 1002, "ip": "192.168.1.150", "message": "Suspicious API call detected", "event_type": "suspicious_api", "severity": "warning"}
