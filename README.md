@@ -4,6 +4,8 @@
 
 **ThreatOps Free** is a comprehensive, open-source Security Operations Center (SOC) simulator that demonstrates real-world threat hunting, detection, and response capabilities. Built entirely with free and open-source technologies, this project serves as both an educational tool and a practical demonstration of modern SOC workflows.
 
+The project uses asynchronous processing for efficient log collection, threat detection, and intelligence enrichment. It includes a modular architecture with components for log collection, threat detection, intelligence enrichment, attack simulation, risk scoring, and reporting - all accessible through a single entry point (`run.py`).
+
 ## 🎯 Key Features
 
 - **Multi-source Log Collection**: Windows EVTX, Linux auth logs, JSON logs
@@ -19,31 +21,6 @@
 ### Option 1: Virtual Environment (Recommended)
 
 ```bash
-# Setup virtual environment and install dependencies
-python setup_venv.py
-
-# Activate virtual environment
-# Windows:
-activate_env.bat
-# Unix/Linux/macOS:
-source activate_env.sh
-
-# Run the SOC simulator
-# Windows:
-run_soc.bat
-# Unix/Linux/macOS:
-./run_soc.sh
-
-# Start dashboard
-# Windows:
-run_dashboard.bat
-# Unix/Linux/macOS:
-./run_dashboard.sh
-```
-
-### Option 2: Manual Setup
-
-```bash
 # Create virtual environment
 python -m venv .venv
 
@@ -53,48 +30,88 @@ python -m venv .venv
 # Unix/Linux/macOS:
 source .venv/bin/activate
 
-# Install dependencies
+# Install dependencies (Full or Minimal)
+# For full features:
 pip install -r requirements.txt
+# For minimal installation:
+pip install -r requirements_minimal.txt
 
 # Run the SOC simulator
-python start.py --mode all
+python run.py --mode all
 
-# Access dashboard
-streamlit run dashboard/app.py
+# Or start only the dashboard
+python -m streamlit run run_streamlit.py -- --mode dashboard
 ```
 
-## ▶️ Running the project (examples)
+### Option 2: Command Line Arguments
 
-The project exposes a single canonical entrypoint: `run.py`. For interactive use the dashboard is powered by Streamlit and should be launched through the Streamlit runner so it creates a web server and opens a browser.
+The project supports various command-line arguments for flexible execution:
 
-Recommended flows (PowerShell examples):
+```bash
+# Run everything (simulation, tests, and dashboard)
+python run.py --mode all
 
-1) Run simulation, tests and then open the dashboard (auto-launches Streamlit):
+# Run only simulation
+python run.py --mode simulation
 
-```powershell
-& ".\.venv\Scripts\python.exe" run.py --mode all
-# or skip tests if you want:
-& ".\.venv\Scripts\python.exe" run.py --mode all --skip-tests
+# Run only dashboard
+python run.py --mode dashboard
+
+# Run only tests
+python run.py --mode test
+
+# Skip tests when running all modes
+python run.py --mode all --skip-tests
+
+# Install dependencies before running
+python run.py --install-deps --mode all
 ```
 
-2) Start the dashboard only (Streamlit CLI — preferred when developing the UI):
+## ▶️ Detailed Usage
 
+### Main Entry Point
+
+The project uses `run.py` as the single canonical entry point with multiple operation modes:
+
+1. **All Components** (simulation, tests, dashboard):
 ```powershell
-& ".\.venv\Scripts\python.exe" -m streamlit run run_streamlit.py -- --mode dashboard
+python run.py --mode all
 ```
 
-3) Run just the simulation (headless):
-
+2. **Dashboard Only** (Streamlit interface):
 ```powershell
-& ".\.venv\Scripts\python.exe" run.py --mode simulation --skip-tests
+python run.py --mode dashboard
+# Or directly with Streamlit:
+python -m streamlit run run_streamlit.py -- --mode dashboard
 ```
 
-Notes:
-- Use `--skip-tests` if you don't want the test-suite to run as part of `--mode all`.
-- If you prefer to run Streamlit directly on a specific port, add the Streamlit `--server.port` argument before the `--` separator. Example:
-
+3. **Simulation Only** (headless):
 ```powershell
-& ".\.venv\Scripts\python.exe" -m streamlit run run_streamlit.py -- --server.port 8502 --mode dashboard
+python run.py --mode simulation
+```
+
+4. **Test Suite**:
+```powershell
+python run.py --mode test
+```
+
+### Advanced Options
+
+- Skip test suite: `--skip-tests`
+- Install dependencies: `--install-deps`
+- Skip pre-flight checks: `--skip-checks`
+- Custom Streamlit port: Add `--server.port PORT` before `--` when using streamlit run
+
+### Example Workflow
+
+1. Run simulation with tests:
+```powershell
+python run.py --mode all
+```
+
+2. Start dashboard for development:
+```powershell
+python -m streamlit run run_streamlit.py -- --mode dashboard --server.port 8502
 ```
 
 
@@ -102,16 +119,21 @@ Notes:
 
 ```
 threat_ops/
-├── collectors/          # Log collection modules
-├── detection/           # Threat detection engine
-├── enrichment/          # Threat intelligence enrichment
-├── simulation/          # Attack simulation engine
-├── scoring/            # Risk scoring and MITRE mapping
-├── dashboard/          # Streamlit dashboard
-├── reporting/          # Report generation
-├── config/            # Configuration files
-├── data/              # Data storage (created at runtime)
-└── tests/             # Test modules
+├── collectors/          # Log collection and processing modules
+├── config/             # Configuration files (settings.yaml and Python settings)
+├── dashboard/          # Streamlit-based interactive dashboard
+├── data/               # Data storage (created at runtime)
+│   ├── alerts/         # Generated threat alerts
+│   ├── logs/          # Collected and processed logs
+│   ├── reports/       # Generated HTML/JSON reports
+│   ├── sample_logs/   # Sample log files for testing
+│   └── simulations/   # Simulation scenario outputs
+├── detection/          # Threat detection engine
+├── enrichment/         # Threat intelligence enrichment
+├── reporting/          # Report generation (HTML/JSON)
+├── scoring/           # Risk scoring and MITRE mapping
+├── simulation/         # Attack simulation scenarios
+└── tests/             # Test modules and verification
 ```
 
 ## 🔧 Configuration
@@ -124,23 +146,35 @@ Edit `config/settings.yaml` to configure:
 
 ## 📊 Dashboard Features
 
-- Real-time alert monitoring
-- Threat intelligence visualization
-- Risk trend analysis
+The Streamlit-based dashboard (`run_streamlit.py`) provides:
+- Real-time alert monitoring and visualization
+- Threat intelligence data enrichment display
+- Risk score trend analysis and metrics
 - MITRE ATT&CK technique mapping
-- Automated report generation
+- Interactive data filtering and search
+- On-demand report generation (HTML/JSON)
+- Simulation scenario results visualization
 
 ## 🛡️ Security Note
 
 This tool is designed for educational and testing purposes. All attack simulations are safe and contained within the local environment.
 
-## 📚 Documentation
+## 📚 Requirements
 
-- [Installation Guide](INSTALL.md)
-- [Architecture Documentation](ARCHITECTURE.md)
-- [API Documentation](API_DOCS.md)
-- [Technical Documentation](TECHNICAL_DOCUMENTATION.md)
-- [Virtual Environment Guide](VENV_GUIDE.md)
+### Minimum Requirements
+Core dependencies are listed in `requirements_minimal.txt`:
+- Python 3.8+
+- PyYAML, Pydantic, python-dateutil
+- Optional: Streamlit, Pandas, NumPy, Plotly
+
+### Full Installation
+Complete feature set requirements in `requirements.txt`:
+- Machine Learning: scikit-learn 1.7.2
+- Visualization: matplotlib, plotly, seaborn
+- Reporting: reportlab, jinja2, weasyprint
+- APIs: requests, aiohttp
+- Testing: pytest, pytest-asyncio
+- Development: black, flake8, mypy
 
 ## 🤝 Contributing
 
