@@ -569,7 +569,25 @@ class AttackSimulator:
                 f.write(json.dumps(log.to_dict()) + '\n')
         
         logger.info(f"Saved {len(logs)} simulation logs to {file_path}")
+        
+        # Also write to Filebeat-monitored log file for OpenSearch ingestion
+        await self._write_to_filebeat_log(logs)
+        
         return file_path
+    
+    async def _write_to_filebeat_log(self, logs: List[LogEntry]):
+        """Write logs to file monitored by Filebeat for OpenSearch ingestion"""
+        log_dir = Path(self.settings.data_dir) / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        
+        filebeat_log = log_dir / "sim_attacks.log"
+        
+        with open(filebeat_log, 'a') as f:
+            for log in logs:
+                # Write each log as a single-line JSON for Filebeat
+                f.write(json.dumps(log.to_dict()) + '\n')
+        
+        logger.info(f"Appended {len(logs)} logs to {filebeat_log} for Filebeat ingestion")
     
     def get_scenario_statistics(self) -> Dict[str, Any]:
         """Get attack scenario statistics"""

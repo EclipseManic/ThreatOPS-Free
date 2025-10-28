@@ -7,6 +7,14 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from collections import defaultdict, Counter
 import json
+from pathlib import Path
+
+# Check for joblib availability
+try:
+    import joblib
+    JOBLIB_AVAILABLE = True
+except ImportError:
+    JOBLIB_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +31,7 @@ except Exception:
     logger.warning("scikit-learn or numpy not available, ML detection disabled")
 
 from collectors.log_collector import LogEntry
+from detection.sigma_parser import SigmaDetectionEngine
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +83,8 @@ class Alert:
 class Whitelist:
     """Whitelist manager for false positive reduction"""
     
-    def __init__(self):
+    def __init__(self, settings=None):
+        self.settings = settings
         self.whitelisted_ips = set()
         self.whitelisted_users = set()
         self.whitelisted_hosts = set()
@@ -82,14 +92,25 @@ class Whitelist:
         self._load_whitelist()
     
     def _load_whitelist(self):
-        """Load whitelist from configuration"""
-        # Default whitelist entries
-        self.whitelisted_ips.update(['127.0.0.1', '::1', 'localhost'])
-        self.whitelisted_users.update(['SYSTEM', 'NT AUTHORITY\\SYSTEM', 'root'])
-        self.whitelisted_processes.update([
-            'System', 'svchost.exe', 'services.exe', 'lsass.exe',
-            'csrss.exe', 'winlogon.exe', 'wininit.exe'
-        ])
+        """Load whitelist from configuration (YAML file)"""
+        if self.settings and hasattr(self.settings, 'whitelist'):
+            # Load from YAML config (new behavior)
+            whitelist_config = self.settings.whitelist
+            self.whitelisted_ips.update(whitelist_config.ips)
+            self.whitelisted_users.update(whitelist_config.users)
+            self.whitelisted_hosts.update(whitelist_config.hosts)
+            self.whitelisted_processes.update(whitelist_config.processes)
+            logger.info(f"Loaded whitelist from config: {len(self.whitelisted_ips)} IPs, "
+                       f"{len(self.whitelisted_users)} users, {len(self.whitelisted_processes)} processes")
+        else:
+            # Fallback to defaults (old behavior for backward compatibility)
+            self.whitelisted_ips.update(['127.0.0.1', '::1', 'localhost'])
+            self.whitelisted_users.update(['SYSTEM', 'NT AUTHORITY\\SYSTEM', 'root'])
+            self.whitelisted_processes.update([
+                'System', 'svchost.exe', 'services.exe', 'lsass.exe',
+                'csrss.exe', 'winlogon.exe', 'wininit.exe'
+            ])
+            logger.warning("Using default whitelist (no config provided)")
     
     def is_whitelisted(self, log: 'LogEntry') -> bool:
         """Check if log entry is whitelisted"""
@@ -120,7 +141,7 @@ class RuleEngine:
     def __init__(self, settings):
         self.settings = settings
         self.rules = {}
-        self.whitelist = Whitelist()
+        self.whitelist = Whitelist(settings)  # Pass settings to Whitelist
         self._load_rules()
         
     def _load_rules(self):
@@ -649,25 +670,51 @@ class BehavioralBaseline:
 class MLDetector:
     """Machine Learning-based anomaly detection"""
     
-    def __init__(self, settings):
+    def __init__(self, settings, model_path: Optional[Path] = None):
         self.settings = settings
         self.model = None
         self.scaler = None
         self.is_trained = False
         self.baseline = BehavioralBaseline()
+        self.model_path = model_path or Path("models/model.joblib")
         
     async def initialize(self):
-        """Initialize ML detector"""
+        """Initialize ML detector - try to load pre-trained model first"""
         if not ML_AVAILABLE:
             logger.warning("ML detection disabled - scikit-learn not available")
             return
         
         logger.info("Initializing ML detector...")
         
-        # Initialize models
+        # Try to load pre-trained model
+        if self.model_path.exists():
+            try:
+                logger.info(f"Loading pre-trained model from {self.model_path}...")
+                import joblib
+                model_data = joblib.load(self.model_path)
+                
+                self.model = model_data['model']
+                self.scaler = model_data['scaler']
+                self.is_trained = True
+                
+                training_date = model_data.get('training_date', 'unknown')
+                training_samples = model_data.get('training_samples', 'unknown')
+                
+                logger.info(f"✓ Loaded pre-trained model successfully")
+                logger.info(f"  Training date: {training_date}")
+                logger.info(f"  Training samples: {training_samples}")
+                logger.info(f"  Model type: {model_data.get('model_type', 'unknown')}")
+                
+                return
+            except Exception as e:
+                logger.error(f"Failed to load pre-trained model: {e}")
+                logger.warning("Falling back to on-the-fly training...")
+        else:
+            logger.info(f"Pre-trained model not found at {self.model_path}")
+            logger.info("Run 'python scripts/train_model.py' to create a model, or will train on-the-fly")
+        
+        # Fallback: Initialize new model (old behavior)
         if self.settings.ml_config.model_type == "isolation_forest":
-            # Create IsolationForest with public API only. Avoid relying on private
-            # attributes (like estimators_) that may change between sklearn versions.
             try:
                 self.model = IsolationForest(
                     contamination=self.settings.ml_config.contamination,
@@ -683,7 +730,7 @@ class MLDetector:
         self.scaler = StandardScaler()
         self.is_trained = False
         
-        logger.info("ML detector initialized successfully")
+        logger.info("ML detector initialized (will train on first use)")
     
     def extract_features(self, logs: List[LogEntry]) -> np.ndarray:
         """Extract numerical features from logs"""
@@ -832,6 +879,8 @@ class ThreatDetector:
         self.settings = settings
         self.rule_engine = RuleEngine(settings)
         self.ml_detector = MLDetector(settings)
+        # Add Sigma detection engine
+        self.sigma_engine = SigmaDetectionEngine()
         
     async def initialize(self):
         """Initialize threat detector"""
@@ -847,10 +896,19 @@ class ThreatDetector:
         
         all_alerts = []
         
-        # Rule-based detection
+        # Rule-based detection (simple rules from config)
         rule_alerts = self.rule_engine.evaluate_rules(logs)
         all_alerts.extend(rule_alerts)
         logger.info(f"Rule engine generated {len(rule_alerts)} alerts")
+        
+        # Sigma-based detection (industry-standard rules)
+        try:
+            sigma_detections = self.sigma_engine.detect(logs)
+            sigma_alerts = self._convert_sigma_to_alerts(sigma_detections)
+            all_alerts.extend(sigma_alerts)
+            logger.info(f"Sigma engine generated {len(sigma_alerts)} alerts")
+        except Exception as e:
+            logger.error(f"Sigma detection error: {e}")
         
         # ML-based detection
         if self.settings.ml_config.enabled and len(logs) >= 100:
@@ -869,6 +927,32 @@ class ThreatDetector:
         
         logger.info(f"Total unique alerts generated: {len(unique_alerts)}")
         return unique_alerts
+    
+    def _convert_sigma_to_alerts(self, sigma_detections: List[Dict]) -> List[Alert]:
+        """Convert Sigma detections to Alert objects"""
+        alerts = []
+        
+        for detection in sigma_detections:
+            log_entry = detection['log_entry']
+            
+            alert = Alert(
+                id=f"sigma_{detection['rule_id']}_{log_entry.host}_{log_entry.timestamp.isoformat()}",
+                timestamp=detection['timestamp'],
+                rule_name=detection['rule_name'],
+                severity=detection['severity'],
+                description=detection['description'],
+                host=log_entry.host,
+                user=log_entry.user,
+                ip=log_entry.ip,
+                event_ids=[log_entry.event_id] if log_entry.event_id else [],
+                mitre_technique=detection['mitre_techniques'][0] if detection['mitre_techniques'] else '',
+                confidence=detection['confidence'],
+                raw_events=[log_entry],
+                tags=detection['tags']
+            )
+            alerts.append(alert)
+        
+        return alerts
     
     def _deduplicate_alerts(self, alerts: List[Alert]) -> List[Alert]:
         """Remove duplicate alerts"""

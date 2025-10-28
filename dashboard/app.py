@@ -629,52 +629,88 @@ class SOCDashboard:
         }
     
     def create_alerts_timeline_chart(self):
-        """Create alerts timeline chart"""
-        # Sample data - in real implementation, query your data
-        data = {
-            'timestamp': pd.date_range(start='2024-01-01', periods=24, freq='h'),
-            'alerts': [2, 1, 3, 5, 2, 4, 6, 3, 2, 1, 4, 5, 3, 2, 6, 4, 3, 5, 2, 1, 3, 4, 2, 3]
-        }
+        """Create alerts timeline chart using REAL alert data"""
+        # Load real alerts from disk
+        alerts = self._load_alerts_from_disk(days_ago=0)
         
-        df = pd.DataFrame(data)
-
-        # Convert timestamps to native python datetimes (one-per-item) to avoid
-        # Plotly internals calling the pandas .dt.to_pydatetime accessor which
-        # triggers a FutureWarning. Using per-item Timestamp.to_pydatetime() is
-        # safe and avoids the deprecated vectorized accessor.
-        x_list = [pd.Timestamp(ts).to_pydatetime() for ts in df['timestamp']]
-
-        # Use plain Python lists for x/y to avoid passing pandas objects into
-        # Plotly internals which may call deprecated pandas accessors.
-        # Build the figure using graph_objects to avoid Plotly Express' internal
-        # data handling which may call pandas accessors and trigger the
-        # deprecation warning. Use native python datetimes and plain lists.
+        if not alerts:
+            # If no alerts, show empty chart
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No alerts data available. Run attack simulations to generate data.",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            fig.update_layout(title='Alerts Over Time', xaxis_title='Time', yaxis_title='Number of Alerts')
+            return fig
+        
+        # Parse timestamps and group by hour
+        timestamps = []
+        for alert in alerts:
+            try:
+                ts = datetime.fromisoformat(alert['timestamp'].replace('Z', '+00:00'))
+                # Round to hour
+                ts_rounded = ts.replace(minute=0, second=0, microsecond=0)
+                timestamps.append(ts_rounded)
+            except Exception:
+                continue
+        
+        # Count alerts per hour
+        from collections import Counter
+        alert_counts = Counter(timestamps)
+        
+        # Sort by timestamp
+        sorted_times = sorted(alert_counts.keys())
+        counts = [alert_counts[t] for t in sorted_times]
+        
+        # Convert to native datetimes
+        x_list = [t.replace(tzinfo=None) for t in sorted_times]
+        
         fig = go.Figure(
             go.Scatter(
                 x=x_list,
-                y=df['alerts'].tolist(),
+                y=counts,
                 mode='lines+markers',
-                name='Alerts'
+                name='Alerts',
+                line=dict(color='#1f77b4')
             )
         )
-        fig.update_layout(title='Alerts Over Time', xaxis_title='Time', yaxis_title='Number of Alerts')
+        fig.update_layout(
+            title=f'Alerts Over Time (Total: {len(alerts)})',
+            xaxis_title='Time',
+            yaxis_title='Number of Alerts'
+        )
         
         return fig
     
     def create_severity_distribution_chart(self):
-        """Create severity distribution chart"""
-        data = {
-            'severity': ['Critical', 'High', 'Medium', 'Low'],
-            'count': [8, 15, 12, 7]
-        }
+        """Create severity distribution chart using REAL alert data"""
+        # Load real alerts from disk
+        alerts = self._load_alerts_from_disk(days_ago=0)
         
-        df = pd.DataFrame(data)
+        if not alerts:
+            # If no alerts, show empty chart
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No alerts data available",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            fig.update_layout(title='Alert Severity Distribution')
+            return fig
+        
+        # Count by severity
+        from collections import Counter
+        severity_counts = Counter([alert.get('severity', 'Unknown') for alert in alerts])
+        
+        # Prepare data
+        severities = list(severity_counts.keys())
+        counts = list(severity_counts.values())
         
         fig = px.pie(
-            df,
-            values='count',
-            names='severity',
-            title='Alert Severity Distribution',
+            names=severities,
+            values=counts,
+            title=f'Alert Severity Distribution (Total: {len(alerts)})',
             color_discrete_map={
                 'Critical': '#f44336',
                 'High': '#ff9800',

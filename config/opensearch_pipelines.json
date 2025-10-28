@@ -1,0 +1,80 @@
+{
+  "description": "ThreatOps log enrichment pipeline",
+  "processors": [
+    {
+      "set": {
+        "field": "_index",
+        "value": "threatops-logs-{{_ingest.timestamp | date:'yyyy.MM.dd'}}"
+      }
+    },
+    {
+      "date": {
+        "field": "timestamp",
+        "target_field": "@timestamp",
+        "formats": ["ISO8601", "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX"],
+        "timezone": "UTC",
+        "on_failure": [
+          {
+            "set": {
+              "field": "@timestamp",
+              "value": "{{_ingest.timestamp}}"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.event_id != null) { if (ctx.event_id == 4625) { ctx.alert_type = 'failed_logon'; } else if (ctx.event_id == 4672) { ctx.alert_type = 'privilege_escalation'; } else if (ctx.event_id == 4688) { ctx.alert_type = 'process_creation'; } }"
+      }
+    },
+    {
+      "grok": {
+        "field": "message",
+        "patterns": [
+          "%{IP:extracted_ip}",
+          "%{HOSTNAME:extracted_domain}"
+        ],
+        "ignore_failure": true
+      }
+    },
+    {
+      "geoip": {
+        "field": "source_ip",
+        "target_field": "geo",
+        "ignore_missing": true,
+        "on_failure": [
+          {
+            "set": {
+              "field": "geo_lookup_error",
+              "value": "GeoIP lookup failed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "user_agent": {
+        "field": "user_agent",
+        "target_field": "user_agent_parsed",
+        "ignore_missing": true
+      }
+    },
+    {
+      "remove": {
+        "field": ["beat", "prospector", "input", "offset"],
+        "ignore_missing": true
+      }
+    }
+  ],
+  "on_failure": [
+    {
+      "set": {
+        "field": "pipeline_error",
+        "value": "{{_ingest.on_failure_message}}"
+      }
+    }
+  ]
+}
+

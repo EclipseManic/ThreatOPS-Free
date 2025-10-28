@@ -689,13 +689,15 @@ class IntelEnricher:
         return filtered_domains
     
     async def _check_ioc(self, ioc: str, ioc_type: str) -> Optional[ThreatIntelResult]:
-        """Check IOC against all available sources"""
-        # First check local database
+        """Check IOC against all available sources (local DB first, then APIs)"""
+        # EFFICIENCY FIX: First check local database (includes free feeds)
         local_result = self.local_db.get_ioc_info(ioc, ioc_type)
         if local_result:
+            logger.debug(f"Found {ioc} in local database (source: {local_result.source})")
             return local_result
         
-        # Check external APIs
+        # Only query external APIs if not found locally (saves rate limits)
+        logger.debug(f"IOC {ioc} not in local DB, checking external APIs...")
         intel_result = None
         
         if ioc_type == 'ip':
@@ -706,6 +708,7 @@ class IntelEnricher:
                         result = await api.check_ip(ioc)
                         if result:
                             intel_result = result
+                            logger.info(f"Found {ioc} via {api_name} API")
                             break
                     except Exception as e:
                         logger.error(f"Error checking IP {ioc} with {api_name}: {e}")
@@ -718,23 +721,26 @@ class IntelEnricher:
                         result = await api.check_domain(ioc)
                         if result:
                             intel_result = result
+                            logger.info(f"Found {ioc} via {api_name} API")
                             break
                     except Exception as e:
                         logger.error(f"Error checking domain {ioc} with {api_name}: {e}")
         
         elif ioc_type == 'hash':
-            # Check hash with VirusTotal
+            # Check hash with VirusTotal (only API that supports hashes)
             if 'virustotal' in self.apis:
                 try:
                     result = await self.apis['virustotal'].check_hash(ioc)
                     if result:
                         intel_result = result
+                        logger.info(f"Found {ioc} via VirusTotal API")
                 except Exception as e:
                     logger.error(f"Error checking hash {ioc} with VirusTotal: {e}")
         
-        # Store result in local database
+        # Store API result in local database for future lookups (caching)
         if intel_result:
             self.local_db.store_ioc_info(intel_result)
+            logger.debug(f"Cached {ioc} in local database")
         
         return intel_result
     
