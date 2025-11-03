@@ -99,21 +99,3 @@ risk_scoring:
     Low: 1.0
     Medium: 1.5
 version: 1.0.0
-whitelist:
-  ips:
-    - 127.0.0.1
-    - ::1
-    - localhost
-  users:
-    - SYSTEM
-    - NT AUTHORITY\SYSTEM
-    - root
-  hosts: []
-  processes:
-    - System
-    - svchost.exe
-    - services.exe
-    - lsass.exe
-    - csrss.exe
-    - winlogon.exe
-    - wininit.exe

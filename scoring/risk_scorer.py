@@ -15,6 +15,14 @@ from detection.threat_detector import Alert
 
 logger = logging.getLogger(__name__)
 
+# OpenSearch client - optional import
+try:
+    from opensearchpy import OpenSearch
+    OPENSEARCH_AVAILABLE = True
+except ImportError:
+    OPENSEARCH_AVAILABLE = False
+    logger.warning("opensearch-py not available, OpenSearch integration disabled")
+
 class MITRETechnique:
     """MITRE ATT&CK technique definition"""
     
@@ -537,15 +545,28 @@ class RecommendationEngine:
 class RiskScorer:
     """Main risk scoring engine"""
     
-    def __init__(self, settings):
+    def __init__(self, settings, opensearch_client=None):
         self.settings = settings
         self.risk_calculator = RiskCalculator(settings)
         self.recommendation_engine = RecommendationEngine()
         self.mitre_mapper = MITREMapper()
+        self.opensearch_client = opensearch_client
         
     async def initialize(self):
         """Initialize risk scorer"""
         logger.info("Initializing risk scorer...")
+        
+        # Initialize OpenSearch client if not provided
+        if not self.opensearch_client and OPENSEARCH_AVAILABLE:
+            try:
+                self.opensearch_client = OpenSearch(
+                    hosts=[{'host': 'localhost', 'port': 9200}],
+                    use_ssl=False
+                )
+                logger.info("Connected to OpenSearch")
+            except Exception as e:
+                logger.error(f"Failed to connect to OpenSearch: {e}")
+                self.opensearch_client = None
         
         # Create data directory
         Path(self.settings.data_dir).mkdir(parents=True, exist_ok=True)
@@ -641,3 +662,82 @@ class RiskScorer:
         
         logger.info(f"Saved risk data for {len(alerts)} alerts to {file_path}")
         return file_path
+    
+    async def score_alerts_from_opensearch(self):
+        """Query OpenSearch for alerts needing scoring, score them, and update"""
+        if not self.opensearch_client:
+            logger.warning("OpenSearch not available, skipping alert scoring")
+            return []
+        
+        try:
+            # Query for alerts that need scoring (enriched but not scored)
+            query = {
+                "query": {
+                    "bool": {
+                        "must": {
+                            "term": {"tags": "threat_intel_enriched"}
+                        },
+                        "must_not": {
+                            "wildcard": {"tags": "risk_level_*"}
+                        },
+                        "filter": {
+                            "range": {
+                                "@timestamp": {
+                                    "gte": "now-24h"
+                                }
+                            }
+                        }
+                    }
+                },
+                "size": 1000
+            }
+            
+            response = self.opensearch_client.search(
+                index='security-alerts',
+                body=query
+            )
+            
+            # Convert hits to Alert objects
+            alerts = []
+            for hit in response['hits']['hits']:
+                alert = Alert.from_dict(hit['_source'])
+                alert.id = hit['_id']
+                alerts.append(alert)
+            
+            logger.info(f"Retrieved {len(alerts)} alerts needing scoring from OpenSearch")
+            
+            # Score alerts
+            scored_alerts = await self.score_alerts(alerts)
+            
+            # Update alerts in OpenSearch
+            if scored_alerts:
+                await self._update_alerts_in_opensearch(scored_alerts)
+            
+            return scored_alerts
+            
+        except Exception as e:
+            logger.error(f"Error scoring alerts from OpenSearch: {e}")
+            return []
+    
+    async def _update_alerts_in_opensearch(self, alerts: List[Alert]):
+        """Update scored alerts in OpenSearch"""
+        if not self.opensearch_client:
+            return
+        
+        try:
+            for alert in alerts:
+                alert_dict = alert.to_dict()
+                alert_dict['@timestamp'] = alert.timestamp.isoformat()
+                
+                # Update the alert document
+                self.opensearch_client.update(
+                    index='security-alerts',
+                    id=alert.id,
+                    body={'doc': alert_dict},
+                    refresh=True
+                )
+            
+            logger.info(f"Updated {len(alerts)} scored alerts in OpenSearch")
+            
+        except Exception as e:
+            logger.error(f"Error updating alerts in OpenSearch: {e}")

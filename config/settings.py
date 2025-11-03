@@ -54,16 +54,6 @@ class RiskScoringConfig(BaseModel):
         "malicious": 2.5
     }
 
-class WhitelistConfig(BaseModel):
-    """Configuration for whitelisting"""
-    ips: List[str] = Field(default_factory=lambda: ['127.0.0.1', '::1', 'localhost'])
-    users: List[str] = Field(default_factory=lambda: ['SYSTEM', 'NT AUTHORITY\\SYSTEM', 'root'])
-    hosts: List[str] = Field(default_factory=list)
-    processes: List[str] = Field(default_factory=lambda: [
-        'System', 'svchost.exe', 'services.exe', 'lsass.exe',
-        'csrss.exe', 'winlogon.exe', 'wininit.exe'
-    ])
-
 class Settings(BaseModel):
     """Main settings configuration"""
     
@@ -155,9 +145,6 @@ class Settings(BaseModel):
     
     # Risk scoring
     risk_scoring: RiskScoringConfig = RiskScoringConfig()
-    
-    # Whitelist
-    whitelist: WhitelistConfig = WhitelistConfig()
     
     # Dashboard settings
     dashboard_port: int = 8501

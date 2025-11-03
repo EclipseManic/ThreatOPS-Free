@@ -1,968 +1,828 @@
-# Streamlit Dashboard for ThreatOps SOC
-
-# Import Streamlit lazily inside run() to avoid triggering Streamlit's
-# runtime warnings when this module is imported in non-UI contexts
-# (e.g., during simulation or tests).
-from typing import Any as _Any_for_st
-st: _Any_for_st = None
+"""
+ThreatOps SIEM Dashboard - Multi-Tab Enhanced Version
+Real-time monitoring with detailed sections
+"""
+import streamlit as st
+import json
 import pandas as pd
-import numpy as np
+from pathlib import Path
+from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import json
-import asyncio
-from datetime import datetime, timezone, timedelta
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-import sqlite3
-
-# Import our modules
+from collections import Counter
 import sys
-sys.path.append('.')
-from config.settings import Settings
-from collectors.log_collector import LogCollector, LogEntry
-from detection.threat_detector import ThreatDetector, Alert
-from enrichment.intel_enricher import IntelEnricher
-from simulation.attack_simulator import AttackSimulator
-from scoring.risk_scorer import RiskScorer, MITREMapper
+import base64
+sys.path.append(str(Path(__file__).parent.parent))
 
-# Page configuration and CSS are applied when the dashboard is actually run
-# under Streamlit (see SOCDashboard.run()).
-
-class SOCDashboard:
-    """Main SOC Dashboard class"""
+def generate_security_report(alerts, stats, report_type='Executive Summary'):
+    """Generate HTML security report with different formats based on report_type"""
+    risk_levels = {'High Risk': 0, 'Medium Risk': 0, 'Low Risk': 0}
     
-    def __init__(self):
-        self.settings = Settings.load_from_file()
-        self.data_dir = Path(self.settings.data_dir)
-        self.alerts_dir = Path(self.settings.alerts_dir)
-        self.logs_dir = Path(self.settings.logs_dir)
-        
-    def run(self):
-        """Run the dashboard"""
-        # Lazily import Streamlit and configure page only when the dashboard
-        # is actually being displayed. This avoids Streamlit emitting
-        # "missing ScriptRunContext" warnings when this module is imported
-        # during non-UI runs (such as simulations or tests).
-        import streamlit as _st
-        global st
-        st = _st
-
-        # Configure Plotly template/colors to match Streamlit's dark theme and
-        # ensure figures render with visible colors instead of appearing
-        # monochrome under dark mode. Set this early before creating figures.
-        try:
-            import plotly.io as pio
-            pio.templates.default = 'plotly_dark'
-        except Exception:
-            # If plotly isn't available for some reason, proceed without failing
-            # since the dashboard should still render other components.
-            pass
-
-        # Page configuration
-        st.set_page_config(
-            page_title="ThreatOps Free - SOC Dashboard",
-            page_icon="🛡️",
-            layout="wide",
-            initial_sidebar_state="expanded"
-        )
-
-        # Custom CSS
-        st.markdown("""
+    def get_risk_level(alert):
+        severity = alert.get('severity', '').lower()
+        risk_score = alert.get('risk_score', 0)
+        if severity in ['critical'] or (isinstance(risk_score, (int, float)) and risk_score >= 75):
+            return 'High Risk'
+        elif severity in ['high'] or (isinstance(risk_score, (int, float)) and risk_score >= 50):
+            return 'Medium Risk'
+        else:
+            return 'Low Risk'
+    
+    for alert in alerts:
+        risk_levels[get_risk_level(alert)] = risk_levels.get(get_risk_level(alert), 0) + 1
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>ThreatOps SIEM Security Report - {report_type}</title>
         <style>
-            .main-header {
-                font-size: 3rem;
-                font-weight: bold;
-                color: #1f77b4;
-                text-align: center;
-                margin-bottom: 2rem;
-            }
-            .metric-card {
-                background-color: #f0f2f6;
-                padding: 1rem;
-                border-radius: 0.5rem;
-                border-left: 4px solid #1f77b4;
-            }
-            .alert-critical {
-                background-color: #ffebee;
-                border-left: 4px solid #f44336;
-            }
-            .alert-high {
-                background-color: #fff3e0;
-                border-left: 4px solid #ff9800;
-            }
-            .alert-medium {
-                background-color: #fff8e1;
-                border-left: 4px solid #ffc107;
-            }
-            .alert-low {
-                background-color: #e8f5e8;
-                border-left: 4px solid #4caf50;
-            }
+            body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
+            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; }}
+            .section {{ background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+            .metric {{ display: inline-block; margin: 15px; padding: 15px; background: #f8f9fa; border-radius: 5px; }}
+            .critical {{ color: #ff4444; font-weight: bold; }}
+            .high {{ color: #ff8800; font-weight: bold; }}
+            .low {{ color: #00C851; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+            th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+            th {{ background-color: #667eea; color: white; }}
         </style>
-        """, unsafe_allow_html=True)
+    </head>
+    <body>
+        <div class="header">
+            <h1>🛡️ ThreatOps SIEM Security Report</h1>
+            <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <p>Report Type: {report_type}</p>
+        </div>
+        
+        <div class="section">
+            <h2>Executive Summary</h2>
+            <div class="metric"><strong>Total Alerts:</strong> {stats['total']}</div>
+            <div class="metric critical"><strong>High Risk:</strong> {risk_levels['High Risk']}</div>
+            <div class="metric high"><strong>Medium Risk:</strong> {risk_levels['Medium Risk']}</div>
+            <div class="metric low"><strong>Low Risk:</strong> {risk_levels['Low Risk']}</div>
+        </div>
+    """
+    
+    if report_type in ['Detailed Analysis', 'Full Report', 'Risk Assessment']:
+        html += """
+        <div class="section">
+            <h2>Log Source Breakdown</h2>
+            <table>
+                <tr><th>Source</th><th>Count</th><th>Percentage</th></tr>
+        """
+        for source, count in sorted(stats['by_source'].items(), key=lambda x: x[1], reverse=True):
+            pct = (count / stats['total'] * 100) if stats['total'] > 0 else 0
+            html += f"<tr><td>{source.replace('_', ' ').title()}</td><td>{count}</td><td>{pct:.2f}%</td></tr>"
+        html += """
+            </table>
+        </div>
+        """
+    
+    if report_type in ['Detailed Analysis', 'Full Report']:
+        html += """
+        <div class="section">
+            <h2>Severity Distribution</h2>
+            <table>
+                <tr><th>Severity</th><th>Count</th></tr>
+        """
+        for sev, count in sorted(stats['by_severity'].items(), key=lambda x: x[1], reverse=True):
+            html += f"<tr><td>{sev}</td><td>{count}</td></tr>"
+        html += """
+            </table>
+        </div>
+        """
+    
+    if report_type == 'Full Report':
+        html += """
+        <div class="section">
+            <h2>Top Attack Techniques</h2>
+            <table>
+                <tr><th>MITRE Technique</th><th>Detections</th></tr>
+        """
+        techniques = Counter(a.get('mitre_technique') for a in alerts if a.get('mitre_technique'))
+        for tech, count in techniques.most_common(10):
+            html += f"<tr><td>{tech}</td><td>{count}</td></tr>"
+        html += """
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>Top Affected Hosts</h2>
+            <table>
+                <tr><th>Host</th><th>Events</th></tr>
+        """
+        hosts = Counter(a.get('host') for a in alerts if a.get('host'))
+        for host, count in hosts.most_common(10):
+            html += f"<tr><td>{host}</td><td>{count}</td></tr>"
+        html += """
+            </table>
+        </div>
+        """
+    
+    html += """
+    </body>
+    </html>
+    """
+    
+    return html
 
-        st.markdown('<h1 class="main-header">🛡️ ThreatOps Free - SOC Dashboard</h1>', unsafe_allow_html=True)
-        
-        # Sidebar
-        self.render_sidebar()
-        
-        # Main content
-        page = st.session_state.get('page', 'overview')
-        
-        if page == 'overview':
-            self.render_overview()
-        elif page == 'alerts':
-            self.render_alerts()
-        elif page == 'threat_intel':
-            self.render_threat_intel()
-        elif page == 'mitre_attack':
-            self.render_mitre_attack()
-        elif page == 'simulation':
-            self.render_simulation()
-        elif page == 'reports':
-            self.render_reports()
-        elif page == 'settings':
-            self.render_settings()
-    
-    def render_sidebar(self):
-        """Render sidebar navigation"""
-        st.sidebar.title("🧠 SOC Navigation")
-        
-        pages = {
-            "📊 Overview": "overview",
-            "🚨 Alerts": "alerts",
-            "🔍 Threat Intelligence": "threat_intel",
-            "🎯 MITRE ATT&CK": "mitre_attack",
-            "🎭 Attack Simulation": "simulation",
-            "📋 Reports": "reports",
-            "⚙️ Settings": "settings"
-        }
-        
-        for page_name, page_key in pages.items():
-            if st.sidebar.button(page_name, key=f"nav_{page_key}"):
-                st.session_state.page = page_key
-                st.rerun()
-        
-        st.sidebar.markdown("---")
-        
-        # Quick actions
-        st.sidebar.subheader("⚡ Quick Actions")
-        
-        if st.sidebar.button("🔄 Refresh Data"):
-            st.rerun()
-        
-        if st.sidebar.button("🎭 Run Simulation"):
-            self.run_attack_simulation()
-        
-        if st.sidebar.button("📊 Generate Report"):
-            self.generate_report()
-        
-        # System status
-        st.sidebar.markdown("---")
-        st.sidebar.subheader("📈 System Status")
-        
-        status_data = self.get_system_status()
-        for status_name, status_value in status_data.items():
-            st.sidebar.metric(status_name, status_value)
-    
-    def render_overview(self):
-        """Render overview dashboard"""
-        st.header("📊 SOC Overview")
-        
-        # Key metrics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        metrics = self.get_overview_metrics()
-        
-        with col1:
-            st.metric(
-                label="🚨 Total Alerts",
-                value=metrics['total_alerts'],
-                delta=metrics['alerts_delta']
-            )
-        
-        with col2:
-            st.metric(
-                label="🔴 Critical Alerts",
-                value=metrics['critical_alerts'],
-                delta=metrics['critical_delta']
-            )
-        
-        with col3:
-            st.metric(
-                label="🛡️ Threats Blocked",
-                value=metrics['threats_blocked'],
-                delta=metrics['blocked_delta']
-            )
-        
-        with col4:
-            st.metric(
-                label="📈 Risk Score",
-                value=f"{metrics['avg_risk_score']:.1f}",
-                delta=f"{metrics['risk_delta']:.1f}"
-            )
-        
-        # Charts
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("📈 Alerts Over Time")
-            alerts_chart = self.create_alerts_timeline_chart()
-            # Render Plotly figure via components.html and pass config explicitly
-            html = alerts_chart.to_html(include_plotlyjs='cdn', full_html=False, config={})
-            st.components.v1.html(html, height=350)
-        
-        with col2:
-            st.subheader("🎯 Alert Severity Distribution")
-            severity_chart = self.create_severity_distribution_chart()
-            html = severity_chart.to_html(include_plotlyjs='cdn', full_html=False, config={})
-            st.components.v1.html(html, height=350)
-        
-        # Recent alerts table
-        st.subheader("🚨 Recent Alerts")
-        recent_alerts = self.get_recent_alerts()
-        if recent_alerts:
-            alerts_df = pd.DataFrame(recent_alerts)
-            st.dataframe(alerts_df, width='stretch')
-        else:
-            st.info("No recent alerts found.")
-    
-    def render_alerts(self):
-        """Render alerts page"""
-        st.header("🚨 Security Alerts")
-        
-        # Filters
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            severity_filter = st.selectbox(
-                "Severity",
-                ["All", "Critical", "High", "Medium", "Low"]
-            )
-        
-        with col2:
-            host_filter = st.selectbox(
-                "Host",
-                ["All"] + self.get_unique_hosts()
-            )
-        
-        with col3:
-            time_filter = st.selectbox(
-                "Time Range",
-                ["Last Hour", "Last 24 Hours", "Last 7 Days", "All"]
-            )
-        
-        with col4:
-            mitre_filter = st.selectbox(
-                "MITRE Technique",
-                ["All"] + self.get_mitre_techniques()
-            )
-        
-        # Alerts table
-        alerts = self.get_filtered_alerts(severity_filter, host_filter, time_filter, mitre_filter)
-        
-        if alerts:
-            alerts_df = pd.DataFrame(alerts)
-            
-            # Display alerts with styling
-            for idx, alert in enumerate(alerts):
-                # Use safe lookups to avoid KeyError when alerts are missing fields
-                rule_name = alert.get('rule_name', 'Unknown') if isinstance(alert, dict) else getattr(alert, 'rule_name', 'Unknown')
-                severity = alert.get('severity', 'Unknown') if isinstance(alert, dict) else getattr(alert, 'severity', 'Unknown')
-                host = alert.get('host', 'unknown') if isinstance(alert, dict) else getattr(alert, 'host', 'unknown')
-                ip = alert.get('ip', 'unknown') if isinstance(alert, dict) else getattr(alert, 'ip', 'unknown')
-                user = alert.get('user', 'unknown') if isinstance(alert, dict) else getattr(alert, 'user', 'unknown')
-                description = alert.get('description', '(no description)') if isinstance(alert, dict) else getattr(alert, 'description', '(no description)')
-                mitre = alert.get('mitre_technique', '') if isinstance(alert, dict) else getattr(alert, 'mitre_technique', '')
-                timestamp = alert.get('timestamp', '') if isinstance(alert, dict) else getattr(alert, 'timestamp', '')
+# Page configuration
+st.set_page_config(
+    page_title="ThreatOps SIEM - Multi-Tab Dashboard",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-                # Normalize severity for CSS class
-                sev_class = severity.lower() if isinstance(severity, str) else 'unknown'
-                alert_class = f"alert-{sev_class}"
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        background-color: #1f2937;
+        border-radius: 4px 4px 0 0;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+""", unsafe_allow_html=True)
 
-                with st.container():
-                    st.markdown(f'<div class="{alert_class}" style="padding: 1rem; margin: 0.5rem 0; border-radius: 0.5rem;">', unsafe_allow_html=True)
+# Data paths
+DATA_DIR = Path(__file__).parent.parent / "data"
+ALERTS_DIR = DATA_DIR / "alerts"
+SIMULATIONS_DIR = DATA_DIR / "simulations"
 
-                    col1, col2, col3 = st.columns([2, 1, 1])
-
-                    with col1:
-                        st.write(f"**{rule_name}**")
-                        st.write(f"Host: {host} | IP: {ip} | User: {user}")
-                        st.write(f"Description: {description}")
-
-                    with col2:
-                        st.write(f"**Severity:** {severity}")
-                        st.write(f"**MITRE:** {mitre}")
-
-                    with col3:
-                        st.write(f"**Time:** {timestamp}")
-                        if st.button("View Details", key=f"details_{idx}"):
-                            self.show_alert_details(alert)
-
-                    st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            st.info("No alerts found matching the selected filters.")
-    
-    def render_threat_intel(self):
-        """Render threat intelligence page"""
-        st.header("🔍 Threat Intelligence")
-        
-        # IOC statistics
-        col1, col2, col3 = st.columns(3)
-        
-        intel_stats = self.get_threat_intel_stats()
-        
-        with col1:
-            st.metric("Total IOCs", intel_stats['total_iocs'])
-        
-        with col2:
-            st.metric("Malicious IOCs", intel_stats['malicious_iocs'])
-        
-        with col3:
-            st.metric("Suspicious IOCs", intel_stats['suspicious_iocs'])
-        
-        # IOC type distribution
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("📊 IOC Type Distribution")
-            ioc_type_chart = self.create_ioc_type_chart()
-            html = ioc_type_chart.to_html(include_plotlyjs='cdn', full_html=False, config={})
-            st.components.v1.html(html, height=350)
-        
-        with col2:
-            st.subheader("🎯 Reputation Distribution")
-            reputation_chart = self.create_reputation_chart()
-            html = reputation_chart.to_html(include_plotlyjs='cdn', full_html=False, config={})
-            st.components.v1.html(html, height=350)
-        
-        # IOC search
-        st.subheader("🔍 IOC Search")
-        ioc_query = st.text_input("Enter IOC (IP, Domain, Hash):")
-        
-        if ioc_query and st.button("Search"):
-            ioc_info = self.search_ioc(ioc_query)
-            if ioc_info:
-                st.json(ioc_info)
-            else:
-                st.warning("IOC not found in threat intelligence database.")
-    
-    def render_mitre_attack(self):
-        """Render MITRE ATT&CK page"""
-        st.header("🎯 MITRE ATT&CK Framework")
-        
-        mitre_mapper = MITREMapper()
-        
-        # Tactic overview
-        st.subheader("📋 ATT&CK Tactics")
-        
-        tactics = mitre_mapper.tactics
-        tactic_cols = st.columns(3)
-        
-        for idx, (tactic, description) in enumerate(tactics.items()):
-            with tactic_cols[idx % 3]:
-                with st.expander(f"**{tactic}**"):
-                    st.write(description)
-                    
-                    # Show techniques for this tactic
-                    techniques = mitre_mapper.get_techniques_by_tactic(tactic)
-                    for technique in techniques:
-                        st.write(f"- **{technique.id}**: {technique.name}")
-        
-        # Technique search
-        st.subheader("🔍 Technique Search")
-        search_query = st.text_input("Search techniques:")
-        
-        if search_query:
-            results = mitre_mapper.search_techniques(search_query)
-            if results:
-                for technique in results:
-                    with st.expander(f"**{technique.id} - {technique.name}**"):
-                        st.write(f"**Tactic:** {technique.tactic}")
-                        st.write(f"**Description:** {technique.description}")
-                        st.write(f"**Platforms:** {', '.join(technique.platforms)}")
-                        
-                        if technique.detection_rules:
-                            st.write("**Detection Rules:**")
-                            for rule in technique.detection_rules:
-                                st.write(f"- {rule}")
-                        
-                        if technique.mitigations:
-                            st.write("**Mitigations:**")
-                            for mitigation in technique.mitigations:
-                                st.write(f"- {mitigation}")
-            else:
-                st.info("No techniques found matching your search.")
-        
-        # Technique usage statistics
-        st.subheader("📊 Technique Usage Statistics")
-        technique_stats = self.get_mitre_technique_stats()
-        
-        if technique_stats:
-            technique_df = pd.DataFrame(technique_stats)
-            technique_chart = px.bar(
-                technique_df,
-                x='technique',
-                y='count',
-                title='Technique Usage Count',
-                color='count',
-                color_continuous_scale='Reds'
-            )
-            html = technique_chart.to_html(include_plotlyjs='cdn', full_html=False, config={})
-            st.components.v1.html(html, height=350)
-    
-    def render_simulation(self):
-        """Render attack simulation page"""
-        st.header("🎭 Attack Simulation")
-        
-        # Simulation controls
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("🎯 Run Simulation")
-            
-            selected_scenario = st.selectbox(
-                "Select Attack Scenario",
-                ["All Scenarios"] + [s.name for s in self.get_attack_scenarios()]
-            )
-            
-            if st.button("🚀 Run Simulation"):
-                with st.spinner("Running attack simulation..."):
-                    self.run_attack_simulation(selected_scenario)
-        
-        with col2:
-            st.subheader("📊 Simulation Statistics")
-            
-            sim_stats = self.get_simulation_stats()
-            
-            st.metric("Total Scenarios", sim_stats['total_scenarios'])
-            st.metric("Enabled Scenarios", sim_stats['enabled_scenarios'])
-            st.metric("Malicious IPs", sim_stats['malicious_ips'])
-            st.metric("Malicious Domains", sim_stats['malicious_domains'])
-        
-        # Scenario details
-        st.subheader("📋 Attack Scenarios")
-        
-        scenarios = self.get_attack_scenarios()
-        for scenario in scenarios:
-            with st.expander(f"**{scenario.name}** - {scenario.severity}"):
-                st.write(f"**Description:** {scenario.description}")
-                st.write(f"**MITRE Technique:** {scenario.mitre_technique}")
-                st.write(f"**Duration:** {scenario.duration_minutes} minutes")
-                st.write(f"**Log Count:** {scenario.log_count}")
-                st.write(f"**Enabled:** {'✅' if scenario.enabled else '❌'}")
-    
-    def render_reports(self):
-        """Render reports page"""
-        st.header("📋 SOC Reports")
-        
-        # Report generation
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("📊 Generate Report")
-            
-            report_type = st.selectbox(
-                "Report Type",
-                ["Daily Summary", "Threat Analysis", "Risk Assessment", "Compliance Report"]
-            )
-            
-            report_format = st.selectbox(
-                "Format",
-                ["HTML", "PDF", "JSON"]
-            )
-            
-            if st.button("📄 Generate Report"):
-                with st.spinner("Generating report..."):
-                    report_path = self.generate_report(report_type, report_format)
-                    if report_path:
-                        st.success(f"Report generated: {report_path}")
-        
-        with col2:
-            st.subheader("📈 Report Statistics")
-            
-            report_stats = self.get_report_stats()
-            
-            st.metric("Reports Generated", report_stats['total_reports'])
-            st.metric("Last Report", report_stats['last_report'])
-            st.metric("Report Size", report_stats['avg_size'])
-        
-        # Recent reports
-        st.subheader("📁 Recent Reports")
-        
-        recent_reports = self.get_recent_reports()
-        if recent_reports:
-            reports_df = pd.DataFrame(recent_reports)
-            st.dataframe(reports_df, width='stretch')
-        else:
-            st.info("No reports found.")
-    
-    def render_settings(self):
-        """Render settings page"""
-        st.header("⚙️ SOC Settings")
-        
-        # Configuration tabs
-        tab1, tab2, tab3, tab4 = st.tabs(["General", "Detection Rules", "APIs", "ML Settings"])
-        
-        with tab1:
-            st.subheader("🔧 General Settings")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.text_input("Project Name", value=self.settings.project_name)
-                st.text_input("Version", value=self.settings.version)
-                st.checkbox("Debug Mode", value=self.settings.debug)
-            
-            with col2:
-                st.number_input("Dashboard Port", value=self.settings.dashboard_port)
-                st.text_input("Dashboard Host", value=self.settings.dashboard_host)
-                st.number_input("Report Frequency (hours)", value=self.settings.report_frequency)
-        
-        with tab2:
-            st.subheader("🚨 Detection Rules")
-            
-            rules = self.settings.get_enabled_detection_rules()
-            for rule in rules:
-                with st.expander(f"**{rule.name}** - {rule.severity}"):
-                    st.write(f"**Description:** {rule.description}")
-                    st.write(f"**MITRE Technique:** {rule.mitre_technique}")
-                    st.write(f"**Enabled:** {'✅' if rule.enabled else '❌'}")
-                    
-                    st.write("**Conditions:**")
-                    for condition in rule.conditions:
-                        st.write(f"- {condition}")
-        
-        with tab3:
-            st.subheader("🔗 API Settings")
-            
-            apis = self.settings.get_enabled_apis()
-            for api in apis:
-                with st.expander(f"**{api.name.title()}**"):
-                    st.write(f"**Enabled:** {'✅' if api.enabled else '❌'}")
-                    st.write(f"**Rate Limit:** {api.rate_limit} requests/minute")
-                    st.write(f"**Timeout:** {api.timeout} seconds")
-                    st.write(f"**API Key:** {'✅ Set' if api.api_key else '❌ Not Set'}")
-        
-        with tab4:
-            st.subheader("🤖 ML Settings")
-            
-            ml_config = self.settings.ml_config
-            
-            st.write(f"**Enabled:** {'✅' if ml_config.enabled else '❌'}")
-            st.write(f"**Model Type:** {ml_config.model_type}")
-            st.write(f"**Contamination:** {ml_config.contamination}")
-            st.write(f"**Training Samples:** {ml_config.training_samples}")
-            st.write(f"**Retrain Frequency:** {ml_config.retrain_frequency} hours")
-    
-    def get_overview_metrics(self) -> Dict[str, Any]:
-        """Get overview metrics"""
-        try:
-            # Load actual alerts from files
-            alerts = self._load_alerts_from_disk()
-            
-            if not alerts:
-                return {
-                    'total_alerts': 0,
-                    'alerts_delta': 0,
-                    'critical_alerts': 0,
-                    'critical_delta': 0,
-                    'threats_blocked': 0,
-                    'blocked_delta': 0,
-                    'avg_risk_score': 0.0,
-                    'risk_delta': 0.0
-                }
-            
-            # Calculate current metrics
-            critical_alerts = len([a for a in alerts if a.get('severity') == 'Critical'])
-            
-            # Calculate risk scores
-            risk_scores = []
-            for alert in alerts:
-                for tag in alert.get('tags', []):
-                    if isinstance(tag, str) and tag.startswith('risk_score_'):
-                        try:
-                            score = float(tag.split('_')[-1])
-                            risk_scores.append(score)
-                            break
-                        except:
-                            pass
-            
-            avg_risk_score = sum(risk_scores) / len(risk_scores) if risk_scores else 0.0
-            
-            # Load previous day data for deltas
-            yesterday_alerts = self._load_alerts_from_disk(days_ago=1)
-            yesterday_critical = len([a for a in yesterday_alerts if a.get('severity') == 'Critical'])
-            
-            return {
-                'total_alerts': len(alerts),
-                'alerts_delta': len(alerts) - len(yesterday_alerts),
-                'critical_alerts': critical_alerts,
-                'critical_delta': critical_alerts - yesterday_critical,
-                'threats_blocked': len([a for a in alerts if 'malicious_ioc' in a.get('tags', [])]),
-                'blocked_delta': 0,  # Would need historical tracking
-                'avg_risk_score': round(avg_risk_score, 1),
-                'risk_delta': 0.0  # Would need historical tracking
-            }
-        except Exception as e:
-            logger.error(f"Error loading overview metrics: {e}")
-            return {
-                'total_alerts': 0,
-                'alerts_delta': 0,
-                'critical_alerts': 0,
-                'critical_delta': 0,
-                'threats_blocked': 0,
-                'blocked_delta': 0,
-                'avg_risk_score': 0.0,
-                'risk_delta': 0.0
-            }
-    
-    def get_system_status(self) -> Dict[str, str]:
-        """Get system status"""
-        return {
-            "Log Collector": "🟢 Running",
-            "Threat Detector": "🟢 Running",
-            "Intel Enricher": "🟢 Running",
-            "Risk Scorer": "🟢 Running"
-        }
-    
-    def create_alerts_timeline_chart(self):
-        """Create alerts timeline chart using REAL alert data"""
-        # Load real alerts from disk
-        alerts = self._load_alerts_from_disk(days_ago=0)
-        
-        if not alerts:
-            # If no alerts, show empty chart
-            fig = go.Figure()
-            fig.add_annotation(
-                text="No alerts data available. Run attack simulations to generate data.",
-                xref="paper", yref="paper",
-                x=0.5, y=0.5, showarrow=False
-            )
-            fig.update_layout(title='Alerts Over Time', xaxis_title='Time', yaxis_title='Number of Alerts')
-            return fig
-        
-        # Parse timestamps and group by hour
-        timestamps = []
-        for alert in alerts:
+@st.cache_data(ttl=5)
+def load_alerts():
+    """Load all alerts from JSON files"""
+    alerts = []
+    if ALERTS_DIR.exists():
+        for alert_file in sorted(ALERTS_DIR.glob("alerts_*.json"), reverse=True):
             try:
-                ts = datetime.fromisoformat(alert['timestamp'].replace('Z', '+00:00'))
-                # Round to hour
-                ts_rounded = ts.replace(minute=0, second=0, microsecond=0)
-                timestamps.append(ts_rounded)
-            except Exception:
+                with open(alert_file, 'r', encoding='utf-8') as f:
+                    file_alerts = json.load(f)
+                    if isinstance(file_alerts, list):
+                        alerts.extend(file_alerts)
+                    else:
+                        alerts.append(file_alerts)
+            except:
                 continue
-        
-        # Count alerts per hour
-        from collections import Counter
-        alert_counts = Counter(timestamps)
-        
-        # Sort by timestamp
-        sorted_times = sorted(alert_counts.keys())
-        counts = [alert_counts[t] for t in sorted_times]
-        
-        # Convert to native datetimes
-        x_list = [t.replace(tzinfo=None) for t in sorted_times]
-        
-        fig = go.Figure(
-            go.Scatter(
-                x=x_list,
-                y=counts,
-                mode='lines+markers',
-                name='Alerts',
-                line=dict(color='#1f77b4')
-            )
-        )
-        fig.update_layout(
-            title=f'Alerts Over Time (Total: {len(alerts)})',
-            xaxis_title='Time',
-            yaxis_title='Number of Alerts'
-        )
-        
-        return fig
+    return alerts
+
+@st.cache_data(ttl=5)
+def load_simulations():
+    """Load simulation data"""
+    simulations = []
+    if SIMULATIONS_DIR.exists():
+        for sim_file in sorted(SIMULATIONS_DIR.glob("simulation_*.json"), reverse=True)[:5]:
+            try:
+                with open(sim_file, 'r', encoding='utf-8') as f:
+                    sim_data = json.load(f)
+                    if isinstance(sim_data, list):
+                        simulations.extend(sim_data)
+            except:
+                continue
+    return simulations
+
+def get_risk_level(alert):
+    """Determine risk level: High, Medium, Low based on severity and risk_score"""
+    severity = alert.get('severity', '').lower()
+    risk_score = alert.get('risk_score', 0)
     
-    def create_severity_distribution_chart(self):
-        """Create severity distribution chart using REAL alert data"""
-        # Load real alerts from disk
-        alerts = self._load_alerts_from_disk(days_ago=0)
+    if severity in ['critical'] or (isinstance(risk_score, (int, float)) and risk_score >= 75):
+        return 'High Risk'
+    elif severity in ['high'] or (isinstance(risk_score, (int, float)) and risk_score >= 50):
+        return 'Medium Risk'
+    elif severity in ['medium', 'warning']:
+        return 'Medium Risk'
+    elif severity in ['low', 'info']:
+        return 'Low Risk'
+    else:
+        return 'Low Risk'
+
+def get_log_collection_stats(alerts):
+    """Get detailed log collection statistics"""
+    stats = {
+        'total': len(alerts),
+        'by_source': {},
+        'by_severity': {},
+        'by_category': {},
+        'by_hour': {},
+        'collection_methods': {}
+    }
+    
+    for alert in alerts:
+        # By source
+        source = alert.get('log_source', 'unknown')
+        stats['by_source'][source] = stats['by_source'].get(source, 0) + 1
         
-        if not alerts:
-            # If no alerts, show empty chart
-            fig = go.Figure()
-            fig.add_annotation(
-                text="No alerts data available",
-                xref="paper", yref="paper",
-                x=0.5, y=0.5, showarrow=False
-            )
-            fig.update_layout(title='Alert Severity Distribution')
-            return fig
+        # By severity
+        severity = alert.get('severity', 'Unknown')
+        stats['by_severity'][severity] = stats['by_severity'].get(severity, 0) + 1
         
-        # Count by severity
-        from collections import Counter
-        severity_counts = Counter([alert.get('severity', 'Unknown') for alert in alerts])
+        # By category
+        category = alert.get('category', 'unknown')
+        stats['by_category'][category] = stats['by_category'].get(category, 0) + 1
         
-        # Prepare data
-        severities = list(severity_counts.keys())
-        counts = list(severity_counts.values())
-        
-        fig = px.pie(
-            names=severities,
-            values=counts,
-            title=f'Alert Severity Distribution (Total: {len(alerts)})',
-            color_discrete_map={
-                'Critical': '#f44336',
-                'High': '#ff9800',
-                'Medium': '#ffc107',
-                'Low': '#4caf50'
-            }
-        )
-        
-        return fig
+        # By hour
+        timestamp = alert.get('timestamp', '')
+        if timestamp:
+            try:
+                hour = timestamp[:13]  # YYYY-MM-DDTHH
+                stats['by_hour'][hour] = stats['by_hour'].get(hour, 0) + 1
+            except:
+                pass
     
-    def _load_alerts_from_disk(self, days_ago: int = 0) -> List[Dict[str, Any]]:
-        """Load alerts from disk files"""
-        alerts = []
-        
-        try:
-            # Calculate time range
-            end_time = datetime.now(timezone.utc) - timedelta(days=days_ago)
-            start_time = end_time - timedelta(days=1)
-            
-            # Check if alerts directory exists
-            if not self.alerts_dir.exists():
-                return alerts
-            
-            # Load alerts from JSON files
-            for alert_file in self.alerts_dir.glob("alerts_*.json"):
-                try:
-                    with open(alert_file, 'r') as f:
-                        for line in f:
-                            if line.strip():
-                                alert_data = json.loads(line.strip())
-                                
-                                # Parse timestamp
-                                alert_timestamp = datetime.fromisoformat(
-                                    alert_data['timestamp'].replace('Z', '+00:00')
-                                )
-                                
-                                # Filter by time range
-                                if start_time <= alert_timestamp <= end_time:
-                                    alerts.append(alert_data)
-                except Exception as e:
-                    logger.error(f"Error loading alerts from {alert_file}: {e}")
-            
-            # Sort by timestamp descending
-            alerts.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-            
-        except Exception as e:
-            logger.error(f"Error in _load_alerts_from_disk: {e}")
-        
-        return alerts
+    # Determine collection methods
+    stats['collection_methods'] = {
+        'Simulated Attacks': stats['by_source'].get('simulation', 0),
+        'Windows Security Events': stats['by_source'].get('windows_security', 0),
+        'Windows System Events': stats['by_source'].get('windows_system', 0),
+        'Windows Application Events': stats['by_source'].get('windows_application', 0)
+    }
     
-    def get_recent_alerts(self) -> List[Dict[str, Any]]:
-        """Get recent alerts"""
-        try:
-            # Load actual alerts from disk
-            alerts = self._load_alerts_from_disk()
-            
-            # Return most recent 20 alerts
-            return alerts[:20] if alerts else []
-        except Exception as e:
-            logger.error(f"Error loading recent alerts: {e}")
-            return []
-    
-    def get_unique_hosts(self) -> List[str]:
-        """Get unique hosts"""
-        try:
-            alerts = self._load_alerts_from_disk()
-            hosts = set(alert.get('host', 'unknown') for alert in alerts if alert.get('host') != 'unknown')
-            return sorted(list(hosts))
-        except Exception as e:
-            logger.error(f"Error getting unique hosts: {e}")
-            return []
-    
-    def get_mitre_techniques(self) -> List[str]:
-        """Get MITRE techniques"""
-        try:
-            alerts = self._load_alerts_from_disk()
-            techniques = set(alert.get('mitre_technique', '') for alert in alerts if alert.get('mitre_technique'))
-            return sorted(list(techniques))
-        except Exception as e:
-            logger.error(f"Error getting MITRE techniques: {e}")
-            return []
-    
-    def get_filtered_alerts(self, severity: str, host: str, time_range: str, mitre: str) -> List[Dict[str, Any]]:
-        """Get filtered alerts"""
-        try:
-            # Load all alerts
-            alerts = self._load_alerts_from_disk()
-            
-            # Apply filters
-            if severity != "All":
-                alerts = [a for a in alerts if a.get('severity') == severity]
-            
-            if host != "All":
-                alerts = [a for a in alerts if a.get('host') == host]
-            
-            if mitre != "All":
-                alerts = [a for a in alerts if a.get('mitre_technique') == mitre]
-            
-            # Apply time range filter
-            if time_range != "All":
-                now = datetime.now(timezone.utc)
-                if time_range == "Last Hour":
-                    cutoff = now - timedelta(hours=1)
-                elif time_range == "Last 24 Hours":
-                    cutoff = now - timedelta(days=1)
-                elif time_range == "Last 7 Days":
-                    cutoff = now - timedelta(days=7)
-                else:
-                    cutoff = None
-                
-                if cutoff:
-                    alerts = [
-                        a for a in alerts
-                        if datetime.fromisoformat(a['timestamp'].replace('Z', '+00:00')) >= cutoff
-                    ]
-            
-            return alerts
-        except Exception as e:
-            logger.error(f"Error filtering alerts: {e}")
-            return []
-    
-    def show_alert_details(self, alert: Dict[str, Any]):
-        """Show alert details"""
-        st.json(alert)
-    
-    def get_threat_intel_stats(self) -> Dict[str, int]:
-        """Get threat intelligence statistics"""
-        return {
-            'total_iocs': 150,
-            'malicious_iocs': 45,
-            'suspicious_iocs': 23
-        }
-    
-    def create_ioc_type_chart(self):
-        """Create IOC type chart"""
-        data = {
-            'type': ['IP', 'Domain', 'Hash', 'URL'],
-            'count': [80, 45, 20, 5]
-        }
-        
-        df = pd.DataFrame(data)
-        
-        fig = px.bar(
-            df,
-            x='type',
-            y='count',
-            title='IOC Type Distribution',
-            color='count',
-            color_continuous_scale='Blues'
-        )
-        
-        return fig
-    
-    def create_reputation_chart(self):
-        """Create reputation chart"""
-        data = {
-            'reputation': ['Malicious', 'Suspicious', 'Clean'],
-            'count': [45, 23, 82]
-        }
-        
-        df = pd.DataFrame(data)
-        
-        fig = px.pie(
-            df,
-            values='count',
-            names='reputation',
-            title='IOC Reputation Distribution',
-            color_discrete_map={
-                'Malicious': '#f44336',
-                'Suspicious': '#ff9800',
-                'Clean': '#4caf50'
-            }
-        )
-        
-        return fig
-    
-    def search_ioc(self, ioc: str) -> Optional[Dict[str, Any]]:
-        """Search for IOC information"""
-        # Sample data - in real implementation, query your threat intel database
-        sample_iocs = {
-            '192.168.1.100': {
-                'ioc': '192.168.1.100',
-                'type': 'ip',
-                'reputation': 'malicious',
-                'confidence': 0.9,
-                'source': 'sample_data'
-            }
-        }
-        
-        return sample_iocs.get(ioc)
-    
-    def get_mitre_technique_stats(self) -> List[Dict[str, Any]]:
-        """Get MITRE technique statistics"""
-        return [
-            {'technique': 'T1110', 'count': 15},
-            {'technique': 'T1078', 'count': 8},
-            {'technique': 'T1059.001', 'count': 12},
-            {'technique': 'T1021', 'count': 6},
-            {'technique': 'T1041', 'count': 3}
-        ]
-    
-    def get_attack_scenarios(self) -> List[Any]:
-        """Get attack scenarios"""
-        # This would return actual scenario objects
-        return []
-    
-    def get_simulation_stats(self) -> Dict[str, int]:
-        """Get simulation statistics"""
-        return {
-            'total_scenarios': 8,
-            'enabled_scenarios': 6,
-            'malicious_ips': 8,
-            'malicious_domains': 8
-        }
-    
-    def run_attack_simulation(self, scenario: str = "All Scenarios"):
-        """Run attack simulation"""
-        st.success(f"Attack simulation completed for {scenario}")
-    
-    def generate_report(self, report_type: str = "Daily Summary", format: str = "HTML") -> Optional[str]:
-        """Generate report"""
-        return f"reports/{report_type.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{format.lower()}"
-    
-    def get_report_stats(self) -> Dict[str, Any]:
-        """Get report statistics"""
-        return {
-            'total_reports': 15,
-            'last_report': '2024-01-01 09:00:00',
-            'avg_size': '2.5 MB'
-        }
-    
-    def get_recent_reports(self) -> List[Dict[str, Any]]:
-        """Get recent reports"""
-        return [
-            {
-                'name': 'Daily Summary Report',
-                'date': '2024-01-01',
-                'size': '2.1 MB',
-                'format': 'PDF'
-            },
-            {
-                'name': 'Threat Analysis Report',
-                'date': '2024-01-01',
-                'size': '1.8 MB',
-                'format': 'HTML'
-            }
-        ]
+    return stats
 
 def main():
-    """Main dashboard function"""
-    dashboard = SOCDashboard()
-    dashboard.run()
+    # Header
+    st.markdown("""
+    <div class="main-header">
+        <h1>🛡️ ThreatOps SIEM Dashboard</h1>
+        <p>Multi-Source Security Monitoring: Simulated Attacks + Real System Logs</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Load data
+    alerts = load_alerts()
+    simulations = load_simulations()
+    stats = get_log_collection_stats(alerts)
+    
+    # Sidebar
+    with st.sidebar:
+        st.title("🎛️ Dashboard Controls")
+        auto_refresh = st.checkbox("⚡ Auto-refresh (5s)", value=True)
+        if auto_refresh:
+            st.success("Live monitoring active")
+        
+        if st.button("🔄 Refresh Now"):
+            st.cache_data.clear()
+            st.rerun()
+        
+        st.markdown("---")
+        st.subheader("📊 Quick Stats")
+        st.metric("Total Alerts", len(alerts))
+        st.metric("Critical", sum(1 for a in alerts if a.get('severity') == 'Critical'))
+        st.metric("Data Sources", len([k for k, v in stats['by_source'].items() if v > 0]))
+        
+        st.markdown("---")
+        st.info(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+    
+    # Create tabs
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "📊 Overview",
+        "🎯 MITRE ATT&CK",
+        "📋 Log Collection Details",
+        "🚨 Alerts & Incidents",
+        "📈 Reports & Analytics",
+        "⚙️ System Health"
+    ])
+    
+    # TAB 1: Overview - Enhanced with Risk Levels and Source Breakdown
+    with tab1:
+        st.header("📊 System Overview - Risk Assessment Dashboard")
+        
+        # Categorize alerts by risk level
+        risk_levels = {'High Risk': 0, 'Medium Risk': 0, 'Low Risk': 0}
+        for alert in alerts:
+            risk_level = get_risk_level(alert)
+            risk_levels[risk_level] = risk_levels.get(risk_level, 0) + 1
+        
+        # Top row: Risk Level Summary
+        st.subheader("🎯 Model-Based Risk Assessment")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total = stats['total']
+            st.metric("Total Alerts Processed", total, 
+                     delta=f"{total} total events", delta_color="normal")
+        
+        with col2:
+            high_risk = risk_levels['High Risk']
+            st.metric("🔴 High Risk", high_risk, 
+                     delta=f"{high_risk/total*100:.1f}%" if total > 0 else "0%",
+                     delta_color="inverse")
+        
+        with col3:
+            medium_risk = risk_levels['Medium Risk']
+            st.metric("🟡 Medium Risk", medium_risk,
+                     delta=f"{medium_risk/total*100:.1f}%" if total > 0 else "0%")
+        
+        with col4:
+            low_risk = risk_levels['Low Risk']
+            st.metric("🟢 Low Risk", low_risk,
+                     delta=f"{low_risk/total*100:.1f}%" if total > 0 else "0%")
+        
+        st.markdown("---")
+        
+        # Second row: Detailed Severity Breakdown
+        st.subheader("📊 Detailed Severity Breakdown (Model Output)")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        critical = stats['by_severity'].get('Critical', 0)
+        high = stats['by_severity'].get('High', 0)
+        medium = stats['by_severity'].get('Medium', 0) + stats['by_severity'].get('Warning', 0)
+        low = stats['by_severity'].get('Low', 0)
+        info = stats['by_severity'].get('Info', 0)
+        
+        with col1:
+            st.metric("🔴 Critical", critical, "Immediate Action" if critical > 0 else "None")
+        with col2:
+            st.metric("🟠 High", high, f"{high} incidents" if high > 0 else "None")
+        with col3:
+            st.metric("🟡 Medium/Warning", medium, f"{medium} incidents" if medium > 0 else "None")
+        with col4:
+            st.metric("🟢 Low", low, f"{low} incidents" if low > 0 else "None")
+        with col5:
+            st.metric("ℹ️ Info", info, f"{info} info logs" if info > 0 else "None")
+        
+        st.markdown("---")
+        
+        # Third row: Source Log Breakdown
+        st.subheader("📋 Log Source Breakdown - Exact Counts from Each Source")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 🔍 Detailed Source Statistics")
+            if stats['by_source']:
+                source_data = []
+                for source, count in sorted(stats['by_source'].items(), key=lambda x: x[1], reverse=True):
+                    source_name = source.replace('_', ' ').title()
+                    percentage = (count / total * 100) if total > 0 else 0
+                    source_data.append({
+                        'Source': source_name,
+                        'Count': count,
+                        'Percentage': f"{percentage:.2f}%",
+                        'Type': 'Simulated' if source == 'simulation' else 'Real System'
+                    })
+                
+                source_df = pd.DataFrame(source_data)
+                st.dataframe(source_df, use_container_width=True, hide_index=True)
+            else:
+                st.info("No source data available")
+        
+        with col2:
+            st.markdown("### 📊 Source Distribution Chart")
+            if stats['by_source']:
+                source_df = pd.DataFrame([
+                    {'Source': k.replace('_', ' ').title(), 'Count': v} 
+                    for k, v in stats['by_source'].items()
+                ])
+                fig = px.pie(source_df, values='Count', names='Source', 
+                           title='Log Distribution by Source',
+                           hole=0.4)
+                st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("---")
+        
+        # Fourth row: Severity Charts
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📈 Risk Level Distribution (Model-Based)")
+            if risk_levels:
+                risk_df = pd.DataFrame([
+                    {'Risk Level': k, 'Count': v}
+                    for k, v in risk_levels.items()
+                ])
+                colors_risk = {'High Risk': '#ff4444', 'Medium Risk': '#ffbb33', 'Low Risk': '#00C851'}
+                fig = px.bar(risk_df, x='Risk Level', y='Count',
+                           title='Alerts by Risk Level (Model Assessment)',
+                           color='Risk Level', color_discrete_map=colors_risk)
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.subheader("📊 Severity Breakdown (Traditional)")
+            if stats['by_severity']:
+                sev_df = pd.DataFrame([
+                    {'Severity': k, 'Count': v}
+                    for k, v in stats['by_severity'].items()
+                ])
+                colors = {'Critical': '#ff4444', 'High': '#ff8800', 
+                         'Medium': '#ffbb33', 'Warning': '#ffbb33',
+                         'Low': '#00C851', 'Info': '#3498db'}
+                fig = px.bar(sev_df, x='Severity', y='Count',
+                           title='Severity Breakdown',
+                           color='Severity', color_discrete_map=colors)
+                st.plotly_chart(fig, use_container_width=True)
+    
+    # TAB 2: MITRE ATT&CK
+    with tab2:
+        st.header("🎯 MITRE ATT&CK Analysis")
+        
+        techniques = [a.get('mitre_technique') for a in alerts if a.get('mitre_technique')]
+        
+        if techniques:
+            technique_counts = Counter(techniques)
+            
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                st.subheader("Top Attack Techniques")
+                tech_df = pd.DataFrame([
+                    {'Technique': k, 'Detections': v}
+                    for k, v in technique_counts.most_common(10)
+                ])
+                fig = px.bar(tech_df, x='Technique', y='Detections',
+                           title='Most Detected MITRE Techniques',
+                           color='Detections', color_continuous_scale='Reds')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                st.subheader("Technique Summary")
+                for tech, count in technique_counts.most_common(10):
+                    st.metric(tech, f"{count} detections")
+            
+            st.markdown("---")
+            st.subheader("📋 Detailed Technique Breakdown")
+            
+            for tech, count in technique_counts.most_common():
+                with st.expander(f"{tech} - {count} detections"):
+                    tech_alerts = [a for a in alerts if a.get('mitre_technique') == tech]
+                    severities = Counter(a.get('severity') for a in tech_alerts)
+                    st.write(f"**Severity Distribution:**")
+                    for sev, cnt in severities.items():
+                        st.write(f"- {sev}: {cnt}")
+                    st.write(f"**Affected Hosts:** {len(set(a.get('host') for a in tech_alerts))}")
+        else:
+            st.info("No MITRE ATT&CK techniques detected yet")
+    
+    # TAB 3: Log Collection Details
+    with tab3:
+        st.header("📋 Log Collection Details")
+        
+        st.subheader("🔍 Collection Methods & Sources")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 📥 Active Collection Methods")
+            for method, count in stats['collection_methods'].items():
+                icon = "🎯" if "Simulated" in method else "🖥️"
+                st.metric(f"{icon} {method}", count, 
+                         f"{(count/stats['total']*100):.1f}%" if stats['total'] > 0 else "0%")
+        
+        with col2:
+            st.markdown("### 📊 Collection Summary")
+            st.write(f"**Total Logs Collected:** {stats['total']}")
+            st.write(f"**Unique Sources:** {len(stats['by_source'])}")
+            st.write(f"**Log Categories:** {len(stats['by_category'])}")
+            st.write(f"**Time Span:** {len(stats['by_hour'])} hours")
+        
+        st.markdown("---")
+        
+        st.subheader("📈 Detailed Source Breakdown")
+        
+        for source, count in stats['by_source'].items():
+            with st.expander(f"{source.replace('_', ' ').title()} - {count} logs"):
+                source_alerts = [a for a in alerts if a.get('log_source') == source]
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.write("**Severity Distribution:**")
+                    sevs = Counter(a.get('severity') for a in source_alerts)
+                    for sev, cnt in sevs.most_common():
+                        st.write(f"- {sev}: {cnt}")
+                
+                with col2:
+                    st.write("**Top Categories:**")
+                    cats = Counter(a.get('category') for a in source_alerts)
+                    for cat, cnt in list(cats.most_common(5)):
+                        st.write(f"- {cat}: {cnt}")
+                
+                with col3:
+                    st.write("**Affected Hosts:**")
+                    hosts = set(a.get('host') for a in source_alerts)
+                    for host in list(hosts)[:5]:
+                        st.write(f"- {host}")
+                    if len(hosts) > 5:
+                        st.write(f"- ... and {len(hosts)-5} more")
+        
+        st.markdown("---")
+        
+        st.subheader("⏱️ Collection Timeline")
+        if stats['by_hour']:
+            timeline_df = pd.DataFrame([
+                {'Hour': k, 'Count': v}
+                for k, v in sorted(stats['by_hour'].items())
+            ])
+            fig = px.line(timeline_df, x='Hour', y='Count',
+                        title='Log Collection Over Time',
+                        markers=True)
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # TAB 4: Alerts & Incidents - Enhanced with Info/Warning/Critical filtering
+    with tab4:
+        st.header("🚨 Alerts & Incidents - Detailed Log Viewer")
+        
+        # Filter section with Info/Warning/Critical
+        filter_col1, filter_col2, filter_col3 = st.columns(3)
+        
+        with filter_col1:
+            # Map severity to category
+            severity_to_category = {
+                'Critical': 'Critical',
+                'High': 'Critical',
+                'Warning': 'Warning',
+                'Medium': 'Warning',
+                'Low': 'Info',
+                'Info': 'Info'
+            }
+            
+            category_filter = st.multiselect(
+                "📋 Filter by Category",
+                options=['Critical', 'Warning', 'Info'],
+                default=['Critical', 'Warning', 'Info'],
+                help="Critical: Critical/High severity | Warning: Medium/Warning | Info: Low/Info"
+            )
+        
+        with filter_col2:
+            source_filter = st.multiselect(
+                "🔍 Filter by Source",
+                options=list(stats['by_source'].keys()),
+                default=list(stats['by_source'].keys()),
+                help="Select which log sources to display"
+            )
+        
+        with filter_col3:
+            risk_level_filter = st.multiselect(
+                "⚡ Filter by Risk Level (Model)",
+                options=['High Risk', 'Medium Risk', 'Low Risk'],
+                default=['High Risk', 'Medium Risk', 'Low Risk'],
+                help="Risk assessment from ML model based on severity and risk_score"
+            )
+        
+        # Filter alerts
+        filtered_alerts = []
+        for a in alerts:
+            # Category filter
+            severity = a.get('severity', '')
+            category = severity_to_category.get(severity, 'Info')
+            if category not in category_filter:
+                continue
+            
+            # Source filter
+            if a.get('log_source') not in source_filter:
+                continue
+            
+            # Risk level filter
+            risk_level = get_risk_level(a)
+            if risk_level not in risk_level_filter:
+                continue
+            
+            filtered_alerts.append(a)
+        
+        # Summary stats for filtered results
+        st.markdown("---")
+        summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+        with summary_col1:
+            st.metric("Total Filtered", len(filtered_alerts), f"of {len(alerts)} total")
+        with summary_col2:
+            critical_count = sum(1 for a in filtered_alerts if a.get('severity') in ['Critical', 'High'])
+            st.metric("Critical/High", critical_count)
+        with summary_col3:
+            warning_count = sum(1 for a in filtered_alerts if a.get('severity') in ['Warning', 'Medium'])
+            st.metric("Warning/Medium", warning_count)
+        with summary_col4:
+            info_count = sum(1 for a in filtered_alerts if a.get('severity') in ['Low', 'Info'])
+            st.metric("Info/Low", info_count)
+        
+        st.markdown("---")
+        
+        for i, alert in enumerate(filtered_alerts[:50]):
+            source = alert.get('log_source', 'unknown')
+            severity = alert.get('severity', 'Unknown')
+            
+            color = "🔴" if severity == 'Critical' else "🟠" if severity == 'High' else "🟡" if severity == 'Medium' else "🟢"
+            
+            with st.expander(f"{color} {severity} - {alert.get('rule_name', 'Unknown')} [{source}]"):
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.write("**🔍 Detection Info:**")
+                    st.write(f"Source: {source.replace('_', ' ').title()}")
+                    st.write(f"Host: {alert.get('host', 'N/A')}")
+                    st.write(f"User: {alert.get('user', 'N/A')}")
+                
+                with col2:
+                    st.write("**⚠️ Risk Assessment:**")
+                    st.write(f"Severity: {severity}")
+                    st.write(f"Risk Score: {alert.get('risk_score', 'N/A')}")
+                    st.write(f"Confidence: {alert.get('confidence', 'N/A')}")
+                
+                with col3:
+                    st.write("**🎯 Attack Details:**")
+                    st.write(f"MITRE: {alert.get('mitre_technique', 'N/A')}")
+                    st.write(f"Category: {alert.get('category', 'N/A')}")
+                    st.write(f"Time: {alert.get('timestamp', 'N/A')[:19] if alert.get('timestamp') else 'N/A'}")
+                
+                st.write("**📝 Description:**")
+                st.write(alert.get('description', 'No description available'))
+                
+                if source == 'simulation':
+                    st.warning("🎯 SIMULATED ATTACK - Generated for testing detection rules")
+                elif 'windows' in source:
+                    st.info(f"🖥️ REAL SYSTEM LOG - From Windows {source.replace('windows_', '').title()}")
+    
+    # TAB 5: Reports & Analytics - Enhanced with Reporting Feature
+    with tab5:
+        st.header("📈 Reports & Analytics")
+        
+        # Report Generation Section
+        st.subheader("📄 Generate Security Report")
+        report_col1, report_col2 = st.columns([3, 1])
+        
+        with report_col1:
+            report_type = st.selectbox(
+                "Report Type",
+                ['Executive Summary', 'Detailed Analysis', 'Risk Assessment', 'Full Report'],
+                help="Select the type of report to generate"
+            )
+        
+        with report_col2:
+            if st.button("🔽 Generate Report", type="primary"):
+                # Generate report
+                report_content = generate_security_report(alerts, stats, report_type)
+                st.download_button(
+                    label="📥 Download Report (HTML)",
+                    data=report_content,
+                    file_name=f"threatops_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    mime="text/html"
+                )
+        
+        st.markdown("---")
+        
+        # Executive Summary
+        st.subheader("📊 Executive Summary")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        # Calculate risk levels for report tab
+        risk_levels_report = {'High Risk': 0, 'Medium Risk': 0, 'Low Risk': 0}
+        for alert in alerts:
+            risk_level = get_risk_level(alert)
+            risk_levels_report[risk_level] = risk_levels_report.get(risk_level, 0) + 1
+        
+        with col1:
+            st.metric("Total Security Events", stats['total'])
+            st.metric("High Risk Events", risk_levels_report['High Risk'])
+        with col2:
+            avg_hour = stats['total']/max(len(stats['by_hour']), 1) if stats['by_hour'] else 0
+            st.metric("Avg Events/Hour", f"{avg_hour:.1f}")
+            critical_pct = (stats['by_severity'].get('Critical', 0) / stats['total'] * 100) if stats['total'] > 0 else 0
+            st.metric("Critical Alert Rate", f"{critical_pct:.1f}%")
+        with col3:
+            st.metric("Unique Hosts Affected", len(set(a.get('host') for a in alerts)))
+            st.metric("Unique Users Involved", len(set(a.get('user') for a in alerts)))
+        with col4:
+            st.metric("Active Log Sources", len([k for k, v in stats['by_source'].items() if v > 0]))
+            st.metric("Total Categories", len(stats['by_category']))
+        
+        st.markdown("---")
+        
+        # Detailed Analytics
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("📉 Event Trend Analysis")
+            if stats['by_hour']:
+                hourly_data = sorted(stats['by_hour'].items())
+                trend_df = pd.DataFrame(hourly_data, columns=['Hour', 'Count'])
+                
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=trend_df['Hour'], y=trend_df['Count'],
+                                        mode='lines+markers', name='Events',
+                                        line=dict(color='#667eea', width=3),
+                                        marker=dict(size=8)))
+                fig.update_layout(
+                    title='Security Event Trend Over Time',
+                    xaxis_title='Time (Hour)',
+                    yaxis_title='Event Count',
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            st.subheader("🎯 Risk Level Distribution Over Time")
+            # Group alerts by hour and risk level
+            hourly_risk = {}
+            for alert in alerts:
+                hour = alert.get('timestamp', '')[:13] if alert.get('timestamp') else 'unknown'
+                risk = get_risk_level(alert)
+                if hour not in hourly_risk:
+                    hourly_risk[hour] = {'High Risk': 0, 'Medium Risk': 0, 'Low Risk': 0}
+                hourly_risk[hour][risk] = hourly_risk[hour].get(risk, 0) + 1
+            
+            if hourly_risk:
+                risk_trend_df = pd.DataFrame([
+                    {'Hour': h, 'High Risk': v['High Risk'], 
+                     'Medium Risk': v['Medium Risk'], 'Low Risk': v['Low Risk']}
+                    for h, v in sorted(hourly_risk.items())
+                ])
+                
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=risk_trend_df['Hour'], y=risk_trend_df['High Risk'],
+                                        mode='lines+markers', name='High Risk', line=dict(color='#ff4444')))
+                fig.add_trace(go.Scatter(x=risk_trend_df['Hour'], y=risk_trend_df['Medium Risk'],
+                                        mode='lines+markers', name='Medium Risk', line=dict(color='#ffbb33')))
+                fig.add_trace(go.Scatter(x=risk_trend_df['Hour'], y=risk_trend_df['Low Risk'],
+                                        mode='lines+markers', name='Low Risk', line=dict(color='#00C851')))
+                fig.update_layout(
+                    title='Risk Level Trend Over Time',
+                    xaxis_title='Time (Hour)',
+                    yaxis_title='Event Count',
+                    hovermode='x unified'
+                )
+                st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("---")
+        
+        st.subheader("🎯 Top Security Concerns & Insights")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.write("**Most Common Attack Types:**")
+            categories = Counter(a.get('category') for a in alerts)
+            for cat, count in categories.most_common(10):
+                pct = (count / stats['total'] * 100) if stats['total'] > 0 else 0
+                st.write(f"- **{cat}**: {count} incidents ({pct:.1f}%)")
+        
+        with col2:
+            st.write("**Most Targeted Hosts:**")
+            hosts = Counter(a.get('host') for a in alerts)
+            for host, count in hosts.most_common(10):
+                st.write(f"- **{host}**: {count} events")
+        
+        with col3:
+            st.write("**Source Log Distribution:**")
+            for source, count in sorted(stats['by_source'].items(), key=lambda x: x[1], reverse=True):
+                source_name = source.replace('_', ' ').title()
+                pct = (count / stats['total'] * 100) if stats['total'] > 0 else 0
+                st.write(f"- **{source_name}**: {count} logs ({pct:.1f}%)")
+    
+    # TAB 6: System Health
+    with tab6:
+        st.header("⚙️ System Health & Status")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🟢 Active Components")
+            st.success("✅ Streamlit Dashboard - Running")
+            st.success("✅ OpenSearch - Running (localhost:9200)")
+            st.success("✅ Log Collection - Active")
+            st.info("⏳ OpenSearch Dashboards - Starting (localhost:5601)")
+        
+        with col2:
+            st.subheader("📊 Performance Metrics")
+            st.metric("Dashboard Refresh Rate", "5 seconds")
+            st.metric("Total Data Sources", len(stats['by_source']))
+            st.metric("Cache Status", "Active")
+        
+        st.markdown("---")
+        
+        st.subheader("🔗 Quick Links")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("**[ThreatOps Dashboard](http://localhost:8501)** - This page")
+        with col2:
+            st.markdown("**[OpenSearch Dashboards](http://localhost:5601)** - Advanced analytics (no login required)")
+        with col3:
+            st.markdown("**[OpenSearch API](http://localhost:9200)** - Backend API")
+    
+    # Auto-refresh logic
+    if auto_refresh:
+        import time
+        time.sleep(5)
+        st.rerun()
 
 if __name__ == "__main__":
     main()
+

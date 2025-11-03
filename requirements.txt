@@ -1,44 +1,62 @@
-# ThreatOps SOC - Full Requirements
-# Install with: pip install -r requirements.txt
+# ThreatOps Free - SOC Simulator Dependencies
 
-# Core dependencies
-pydantic==2.5.0
-PyYAML==6.0.1
-python-dateutil==2.8.2
+# Core Framework
+streamlit>=1.28.0
+flask>=2.3.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
 
-# Async and HTTP
-aiohttp==3.9.1
-asyncio==3.4.3
+# OpenSearch Integration
+opensearch-py>=2.3.0
 
-# Data processing
-pandas==2.1.4
-numpy==1.26.2
+# Data Processing
+pandas>=2.1.0
+numpy>=1.24.0
+pydantic>=2.5.0
+sqlalchemy>=2.0.0
+
+# Log Processing
+python-evtx>=0.8.0
+pywin32>=306; sys_platform == "win32"
+psutil>=5.9.0
 
 # Machine Learning
-scikit-learn==1.3.2
-joblib==1.3.2
+# Pin scikit-learn to a stable 1.2.x release to avoid breaking API changes for this project
+scikit-learn==1.7.2
+scipy>=1.11.0
 
-# Visualization (for dashboard)
-streamlit==1.29.0
-plotly==5.18.0
+# Threat Intelligence APIs
+requests>=2.31.0
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+
+# Visualization
+matplotlib>=3.7.0
+plotly>=5.16.0
+seaborn>=0.12.0
 
 # Reporting
-jinja2==3.1.2
-weasyprint==60.1
-markdown==3.5.1
+reportlab>=4.0.0
+jinja2>=3.1.0
+weasyprint>=60.0
 
-# Database
-sqlite3  # Built-in with Python
+# Utilities
+pyyaml>=6.0.0
+python-dateutil>=2.8.0
+pytz>=2023.3
+schedule>=1.2.0
+colorama>=0.4.6
+tqdm>=4.66.0
 
-# Threat Intel
-requests==2.31.0
-urllib3==2.1.0
+# Security
+cryptography>=41.0.0
 
-# Logging
-colorlog==6.8.0
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
 
-# YAML parsing for Sigma rules
-# (PyYAML already included above)
-
-# Optional: For better performance
-# uvloop==0.19.0  # Uncomment for Linux/Mac
+# Development
+black>=23.9.0
+flake8>=6.1.0
+mypy>=1.6.0

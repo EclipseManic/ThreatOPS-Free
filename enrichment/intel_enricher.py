@@ -17,6 +17,14 @@ from detection.threat_detector import Alert
 
 logger = logging.getLogger(__name__)
 
+# OpenSearch client - optional import
+try:
+    from opensearchpy import OpenSearch
+    OPENSEARCH_AVAILABLE = True
+except ImportError:
+    OPENSEARCH_AVAILABLE = False
+    logger.warning("opensearch-py not available, OpenSearch integration disabled")
+
 def retry_on_failure(max_retries: int = 3, delay: float = 1.0):
     """Decorator for retrying failed API calls"""
     def decorator(func):
@@ -570,14 +578,27 @@ class AlienVaultOTXAPI:
 class IntelEnricher:
     """Main threat intelligence enrichment engine"""
     
-    def __init__(self, settings):
+    def __init__(self, settings, opensearch_client=None):
         self.settings = settings
         self.local_db = LocalIntelDB()
         self.apis = {}
+        self.opensearch_client = opensearch_client
         
     async def initialize(self):
         """Initialize threat intelligence enricher"""
         logger.info("Initializing threat intelligence enricher...")
+        
+        # Initialize OpenSearch client if not provided
+        if not self.opensearch_client and OPENSEARCH_AVAILABLE:
+            try:
+                self.opensearch_client = OpenSearch(
+                    hosts=[{'host': 'localhost', 'port': 9200}],
+                    use_ssl=False
+                )
+                logger.info("Connected to OpenSearch")
+            except Exception as e:
+                logger.error(f"Failed to connect to OpenSearch: {e}")
+                self.opensearch_client = None
         
         # Initialize APIs
         for api_config in self.settings.get_enabled_apis():
@@ -689,15 +710,13 @@ class IntelEnricher:
         return filtered_domains
     
     async def _check_ioc(self, ioc: str, ioc_type: str) -> Optional[ThreatIntelResult]:
-        """Check IOC against all available sources (local DB first, then APIs)"""
-        # EFFICIENCY FIX: First check local database (includes free feeds)
+        """Check IOC against all available sources"""
+        # First check local database
         local_result = self.local_db.get_ioc_info(ioc, ioc_type)
         if local_result:
-            logger.debug(f"Found {ioc} in local database (source: {local_result.source})")
             return local_result
         
-        # Only query external APIs if not found locally (saves rate limits)
-        logger.debug(f"IOC {ioc} not in local DB, checking external APIs...")
+        # Check external APIs
         intel_result = None
         
         if ioc_type == 'ip':
@@ -708,7 +727,6 @@ class IntelEnricher:
                         result = await api.check_ip(ioc)
                         if result:
                             intel_result = result
-                            logger.info(f"Found {ioc} via {api_name} API")
                             break
                     except Exception as e:
                         logger.error(f"Error checking IP {ioc} with {api_name}: {e}")
@@ -721,26 +739,23 @@ class IntelEnricher:
                         result = await api.check_domain(ioc)
                         if result:
                             intel_result = result
-                            logger.info(f"Found {ioc} via {api_name} API")
                             break
                     except Exception as e:
                         logger.error(f"Error checking domain {ioc} with {api_name}: {e}")
         
         elif ioc_type == 'hash':
-            # Check hash with VirusTotal (only API that supports hashes)
+            # Check hash with VirusTotal
             if 'virustotal' in self.apis:
                 try:
                     result = await self.apis['virustotal'].check_hash(ioc)
                     if result:
                         intel_result = result
-                        logger.info(f"Found {ioc} via VirusTotal API")
                 except Exception as e:
                     logger.error(f"Error checking hash {ioc} with VirusTotal: {e}")
         
-        # Store API result in local database for future lookups (caching)
+        # Store result in local database
         if intel_result:
             self.local_db.store_ioc_info(intel_result)
-            logger.debug(f"Cached {ioc} in local database")
         
         return intel_result
     
@@ -769,3 +784,79 @@ class IntelEnricher:
             'reputation_distribution': reputation_counts,
             'source_distribution': source_counts
         }
+    
+    async def enrich_alerts_from_opensearch(self):
+        """Query OpenSearch for alerts needing enrichment, enrich them, and update"""
+        if not self.opensearch_client:
+            logger.warning("OpenSearch not available, skipping alert enrichment")
+            return []
+        
+        try:
+            # Query for alerts that need enrichment (no threat_intel tag)
+            query = {
+                "query": {
+                    "bool": {
+                        "must_not": {
+                            "term": {"tags": "threat_intel_enriched"}
+                        },
+                        "filter": {
+                            "range": {
+                                "@timestamp": {
+                                    "gte": "now-24h"
+                                }
+                            }
+                        }
+                    }
+                },
+                "size": 1000
+            }
+            
+            response = self.opensearch_client.search(
+                index='security-alerts',
+                body=query
+            )
+            
+            # Convert hits to Alert objects
+            alerts = []
+            for hit in response['hits']['hits']:
+                alert = Alert.from_dict(hit['_source'])
+                alert.id = hit['_id']
+                alerts.append(alert)
+            
+            logger.info(f"Retrieved {len(alerts)} alerts needing enrichment from OpenSearch")
+            
+            # Enrich alerts
+            enriched_alerts = await self.enrich_alerts(alerts)
+            
+            # Update alerts in OpenSearch
+            if enriched_alerts:
+                await self._update_alerts_in_opensearch(enriched_alerts)
+            
+            return enriched_alerts
+            
+        except Exception as e:
+            logger.error(f"Error enriching alerts from OpenSearch: {e}")
+            return []
+    
+    async def _update_alerts_in_opensearch(self, alerts: List[Alert]):
+        """Update enriched alerts in OpenSearch"""
+        if not self.opensearch_client:
+            return
+        
+        try:
+            for alert in alerts:
+                alert_dict = alert.to_dict()
+                alert_dict['@timestamp'] = alert.timestamp.isoformat()
+                
+                # Update the alert document
+                self.opensearch_client.update(
+                    index='security-alerts',
+                    id=alert.id,
+                    body={'doc': alert_dict},
+                    refresh=True
+                )
+            
+            logger.info(f"Updated {len(alerts)} enriched alerts in OpenSearch")
+            
+        except Exception as e:
+            logger.error(f"Error updating alerts in OpenSearch: {e}")

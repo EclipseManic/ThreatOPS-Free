@@ -569,25 +569,25 @@ class AttackSimulator:
                 f.write(json.dumps(log.to_dict()) + '\n')
         
         logger.info(f"Saved {len(logs)} simulation logs to {file_path}")
-        
-        # Also write to Filebeat-monitored log file for OpenSearch ingestion
-        await self._write_to_filebeat_log(logs)
-        
         return file_path
     
-    async def _write_to_filebeat_log(self, logs: List[LogEntry]):
-        """Write logs to file monitored by Filebeat for OpenSearch ingestion"""
-        log_dir = Path(self.settings.data_dir) / "logs"
-        log_dir.mkdir(parents=True, exist_ok=True)
+    async def write_logs_for_filebeat(self, logs: List[LogEntry]):
+        """Write logs to sim_attacks.log for Filebeat to collect"""
+        log_file = Path(self.settings.data_dir) / "sim_attacks.log"
         
-        filebeat_log = log_dir / "sim_attacks.log"
+        # Ensure data directory exists
+        log_file.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(filebeat_log, 'a') as f:
+        # Append logs to the file in NDJSON format
+        with open(log_file, 'a', encoding='utf-8') as f:
             for log in logs:
-                # Write each log as a single-line JSON for Filebeat
-                f.write(json.dumps(log.to_dict()) + '\n')
+                log_dict = log.to_dict()
+                # Add source field for Filebeat
+                log_dict['log_source'] = 'threat_ops_simulator'
+                f.write(json.dumps(log_dict) + '\n')
         
-        logger.info(f"Appended {len(logs)} logs to {filebeat_log} for Filebeat ingestion")
+        logger.info(f"Wrote {len(logs)} simulation logs to {log_file} for Filebeat collection")
+        return log_file
     
     def get_scenario_statistics(self) -> Dict[str, Any]:
         """Get attack scenario statistics"""

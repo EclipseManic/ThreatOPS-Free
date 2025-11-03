@@ -7,16 +7,17 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from collections import defaultdict, Counter
 import json
-from pathlib import Path
-
-# Check for joblib availability
-try:
-    import joblib
-    JOBLIB_AVAILABLE = True
-except ImportError:
-    JOBLIB_AVAILABLE = False
+import uuid
 
 logger = logging.getLogger(__name__)
+
+# OpenSearch client - optional import
+try:
+    from opensearchpy import OpenSearch
+    OPENSEARCH_AVAILABLE = True
+except ImportError:
+    OPENSEARCH_AVAILABLE = False
+    logger.warning("opensearch-py not available, OpenSearch integration disabled")
 
 # Machine Learning imports are deferred; set ML_AVAILABLE after attempting imports
 try:
@@ -31,7 +32,6 @@ except Exception:
     logger.warning("scikit-learn or numpy not available, ML detection disabled")
 
 from collectors.log_collector import LogEntry
-from detection.sigma_parser import SigmaDetectionEngine
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +83,7 @@ class Alert:
 class Whitelist:
     """Whitelist manager for false positive reduction"""
     
-    def __init__(self, settings=None):
-        self.settings = settings
+    def __init__(self):
         self.whitelisted_ips = set()
         self.whitelisted_users = set()
         self.whitelisted_hosts = set()
@@ -92,25 +91,14 @@ class Whitelist:
         self._load_whitelist()
     
     def _load_whitelist(self):
-        """Load whitelist from configuration (YAML file)"""
-        if self.settings and hasattr(self.settings, 'whitelist'):
-            # Load from YAML config (new behavior)
-            whitelist_config = self.settings.whitelist
-            self.whitelisted_ips.update(whitelist_config.ips)
-            self.whitelisted_users.update(whitelist_config.users)
-            self.whitelisted_hosts.update(whitelist_config.hosts)
-            self.whitelisted_processes.update(whitelist_config.processes)
-            logger.info(f"Loaded whitelist from config: {len(self.whitelisted_ips)} IPs, "
-                       f"{len(self.whitelisted_users)} users, {len(self.whitelisted_processes)} processes")
-        else:
-            # Fallback to defaults (old behavior for backward compatibility)
-            self.whitelisted_ips.update(['127.0.0.1', '::1', 'localhost'])
-            self.whitelisted_users.update(['SYSTEM', 'NT AUTHORITY\\SYSTEM', 'root'])
-            self.whitelisted_processes.update([
-                'System', 'svchost.exe', 'services.exe', 'lsass.exe',
-                'csrss.exe', 'winlogon.exe', 'wininit.exe'
-            ])
-            logger.warning("Using default whitelist (no config provided)")
+        """Load whitelist from configuration"""
+        # Default whitelist entries
+        self.whitelisted_ips.update(['127.0.0.1', '::1', 'localhost'])
+        self.whitelisted_users.update(['SYSTEM', 'NT AUTHORITY\\SYSTEM', 'root'])
+        self.whitelisted_processes.update([
+            'System', 'svchost.exe', 'services.exe', 'lsass.exe',
+            'csrss.exe', 'winlogon.exe', 'wininit.exe'
+        ])
     
     def is_whitelisted(self, log: 'LogEntry') -> bool:
         """Check if log entry is whitelisted"""
@@ -141,7 +129,7 @@ class RuleEngine:
     def __init__(self, settings):
         self.settings = settings
         self.rules = {}
-        self.whitelist = Whitelist(settings)  # Pass settings to Whitelist
+        self.whitelist = Whitelist()
         self._load_rules()
         
     def _load_rules(self):
@@ -670,51 +658,38 @@ class BehavioralBaseline:
 class MLDetector:
     """Machine Learning-based anomaly detection"""
     
-    def __init__(self, settings, model_path: Optional[Path] = None):
+    def __init__(self, settings, opensearch_client=None):
         self.settings = settings
         self.model = None
         self.scaler = None
         self.is_trained = False
         self.baseline = BehavioralBaseline()
-        self.model_path = model_path or Path("models/model.joblib")
+        self.opensearch_client = opensearch_client
         
     async def initialize(self):
-        """Initialize ML detector - try to load pre-trained model first"""
+        """Initialize ML detector"""
         if not ML_AVAILABLE:
             logger.warning("ML detection disabled - scikit-learn not available")
             return
         
         logger.info("Initializing ML detector...")
         
-        # Try to load pre-trained model
-        if self.model_path.exists():
+        # Initialize OpenSearch client if not provided
+        if not self.opensearch_client and OPENSEARCH_AVAILABLE:
             try:
-                logger.info(f"Loading pre-trained model from {self.model_path}...")
-                import joblib
-                model_data = joblib.load(self.model_path)
-                
-                self.model = model_data['model']
-                self.scaler = model_data['scaler']
-                self.is_trained = True
-                
-                training_date = model_data.get('training_date', 'unknown')
-                training_samples = model_data.get('training_samples', 'unknown')
-                
-                logger.info(f"✓ Loaded pre-trained model successfully")
-                logger.info(f"  Training date: {training_date}")
-                logger.info(f"  Training samples: {training_samples}")
-                logger.info(f"  Model type: {model_data.get('model_type', 'unknown')}")
-                
-                return
+                self.opensearch_client = OpenSearch(
+                    hosts=[{'host': 'localhost', 'port': 9200}],
+                    use_ssl=False
+                )
+                logger.info("Connected to OpenSearch")
             except Exception as e:
-                logger.error(f"Failed to load pre-trained model: {e}")
-                logger.warning("Falling back to on-the-fly training...")
-        else:
-            logger.info(f"Pre-trained model not found at {self.model_path}")
-            logger.info("Run 'python scripts/train_model.py' to create a model, or will train on-the-fly")
+                logger.error(f"Failed to connect to OpenSearch: {e}")
+                self.opensearch_client = None
         
-        # Fallback: Initialize new model (old behavior)
+        # Initialize models
         if self.settings.ml_config.model_type == "isolation_forest":
+            # Create IsolationForest with public API only. Avoid relying on private
+            # attributes (like estimators_) that may change between sklearn versions.
             try:
                 self.model = IsolationForest(
                     contamination=self.settings.ml_config.contamination,
@@ -730,7 +705,7 @@ class MLDetector:
         self.scaler = StandardScaler()
         self.is_trained = False
         
-        logger.info("ML detector initialized (will train on first use)")
+        logger.info("ML detector initialized successfully")
     
     def extract_features(self, logs: List[LogEntry]) -> np.ndarray:
         """Extract numerical features from logs"""
@@ -871,20 +846,119 @@ class MLDetector:
         
         logger.info(f"ML detector generated {len(alerts)} anomaly alerts")
         return alerts
+    
+    async def detect(self, index_pattern: str = "filebeat-*", max_logs: int = 10000):
+        """Query OpenSearch for logs and detect anomalies, write alerts back to OpenSearch"""
+        if not self.opensearch_client:
+            logger.warning("OpenSearch not available, skipping detection")
+            return []
+        
+        try:
+            # Query OpenSearch for recent logs
+            query = {
+                "query": {
+                    "range": {
+                        "@timestamp": {
+                            "gte": "now-1h",
+                            "lte": "now"
+                        }
+                    }
+                },
+                "size": max_logs,
+                "sort": [{"@timestamp": {"order": "desc"}}]
+            }
+            
+            response = self.opensearch_client.search(
+                index=index_pattern,
+                body=query
+            )
+            
+            # Convert OpenSearch hits to LogEntry objects
+            from collectors.log_collector import LogEntry
+            logs = []
+            
+            for hit in response['hits']['hits']:
+                source = hit['_source']
+                
+                # Parse log entry
+                log = LogEntry(
+                    timestamp=datetime.fromisoformat(source.get('@timestamp', datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00')),
+                    host=source.get('host', {}).get('name', 'unknown') if isinstance(source.get('host'), dict) else source.get('host', 'unknown'),
+                    user=source.get('user', 'unknown'),
+                    event_id=source.get('event_id', 0),
+                    ip=source.get('source', {}).get('ip', 'unknown') if isinstance(source.get('source'), dict) else source.get('ip', 'unknown'),
+                    message=source.get('message', ''),
+                    event_type=source.get('event_type', 'unknown'),
+                    severity=source.get('severity', 'info'),
+                    source=source.get('log_source', 'opensearch'),
+                    raw_data=source
+                )
+                logs.append(log)
+            
+            logger.info(f"Retrieved {len(logs)} logs from OpenSearch")
+            
+            # Detect anomalies
+            alerts = self.detect_anomalies(logs)
+            
+            # Write alerts to OpenSearch
+            if alerts:
+                await self._write_alerts_to_opensearch(alerts)
+            
+            return alerts
+            
+        except Exception as e:
+            logger.error(f"Error querying OpenSearch: {e}")
+            return []
+    
+    async def _write_alerts_to_opensearch(self, alerts: List[Alert]):
+        """Write alerts to OpenSearch security-alerts index"""
+        if not self.opensearch_client:
+            return
+        
+        try:
+            for alert in alerts:
+                alert_dict = alert.to_dict()
+                alert_dict['@timestamp'] = alert.timestamp.isoformat()
+                alert_dict['_id'] = alert.id or str(uuid.uuid4())
+                
+                # Index the alert
+                self.opensearch_client.index(
+                    index='security-alerts',
+                    id=alert_dict['_id'],
+                    body=alert_dict,
+                    refresh=True
+                )
+            
+            logger.info(f"Wrote {len(alerts)} alerts to OpenSearch security-alerts index")
+            
+        except Exception as e:
+            logger.error(f"Error writing alerts to OpenSearch: {e}")
 
 class ThreatDetector:
     """Main threat detection engine"""
     
-    def __init__(self, settings):
+    def __init__(self, settings, opensearch_client=None):
         self.settings = settings
         self.rule_engine = RuleEngine(settings)
-        self.ml_detector = MLDetector(settings)
-        # Add Sigma detection engine
-        self.sigma_engine = SigmaDetectionEngine()
+        self.ml_detector = MLDetector(settings, opensearch_client)
+        self.opensearch_client = opensearch_client
         
     async def initialize(self):
         """Initialize threat detector"""
         logger.info("Initializing threat detector...")
+        
+        # Initialize OpenSearch client if not provided
+        if not self.opensearch_client and OPENSEARCH_AVAILABLE:
+            try:
+                self.opensearch_client = OpenSearch(
+                    hosts=[{'host': 'localhost', 'port': 9200}],
+                    use_ssl=False
+                )
+                self.ml_detector.opensearch_client = self.opensearch_client
+                logger.info("Connected to OpenSearch")
+            except Exception as e:
+                logger.error(f"Failed to connect to OpenSearch: {e}")
+                self.opensearch_client = None
         
         await self.ml_detector.initialize()
         
@@ -896,19 +970,10 @@ class ThreatDetector:
         
         all_alerts = []
         
-        # Rule-based detection (simple rules from config)
+        # Rule-based detection
         rule_alerts = self.rule_engine.evaluate_rules(logs)
         all_alerts.extend(rule_alerts)
         logger.info(f"Rule engine generated {len(rule_alerts)} alerts")
-        
-        # Sigma-based detection (industry-standard rules)
-        try:
-            sigma_detections = self.sigma_engine.detect(logs)
-            sigma_alerts = self._convert_sigma_to_alerts(sigma_detections)
-            all_alerts.extend(sigma_alerts)
-            logger.info(f"Sigma engine generated {len(sigma_alerts)} alerts")
-        except Exception as e:
-            logger.error(f"Sigma detection error: {e}")
         
         # ML-based detection
         if self.settings.ml_config.enabled and len(logs) >= 100:
@@ -927,32 +992,6 @@ class ThreatDetector:
         
         logger.info(f"Total unique alerts generated: {len(unique_alerts)}")
         return unique_alerts
-    
-    def _convert_sigma_to_alerts(self, sigma_detections: List[Dict]) -> List[Alert]:
-        """Convert Sigma detections to Alert objects"""
-        alerts = []
-        
-        for detection in sigma_detections:
-            log_entry = detection['log_entry']
-            
-            alert = Alert(
-                id=f"sigma_{detection['rule_id']}_{log_entry.host}_{log_entry.timestamp.isoformat()}",
-                timestamp=detection['timestamp'],
-                rule_name=detection['rule_name'],
-                severity=detection['severity'],
-                description=detection['description'],
-                host=log_entry.host,
-                user=log_entry.user,
-                ip=log_entry.ip,
-                event_ids=[log_entry.event_id] if log_entry.event_id else [],
-                mitre_technique=detection['mitre_techniques'][0] if detection['mitre_techniques'] else '',
-                confidence=detection['confidence'],
-                raw_events=[log_entry],
-                tags=detection['tags']
-            )
-            alerts.append(alert)
-        
-        return alerts
     
     def _deduplicate_alerts(self, alerts: List[Alert]) -> List[Alert]:
         """Remove duplicate alerts"""
