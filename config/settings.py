@@ -6,6 +6,26 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, Field
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Load .env file from project root (parent of config directory)
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+        # Use ASCII-safe message for Windows compatibility
+        try:
+            print(f"[OK] Loaded environment variables from {env_path}")
+        except UnicodeEncodeError:
+            print(f"[OK] Loaded environment variables from .env file")
+    else:
+        # Try loading from current directory as fallback
+        load_dotenv()
+except ImportError:
+    print("[WARNING] python-dotenv not installed. Environment variables must be set manually.")
+except Exception as e:
+    print(f"[WARNING] Error loading .env file: {e}")
+
 class LogSourceConfig(BaseModel):
     """Configuration for log sources"""
     enabled: bool = True

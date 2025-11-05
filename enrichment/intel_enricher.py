@@ -593,9 +593,15 @@ class IntelEnricher:
             try:
                 self.opensearch_client = OpenSearch(
                     hosts=[{'host': 'localhost', 'port': 9200}],
-                    use_ssl=False
+                    use_ssl=False,
+                    verify_certs=False,
+                    timeout=10,
+                    max_retries=3,
+                    retry_on_timeout=True
                 )
-                logger.info("Connected to OpenSearch")
+                # Verify connection by making a health check
+                self.opensearch_client.info()
+                logger.info("Connected to OpenSearch and verified")
             except Exception as e:
                 logger.error(f"Failed to connect to OpenSearch: {e}")
                 self.opensearch_client = None

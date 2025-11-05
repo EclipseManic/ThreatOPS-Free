@@ -1,7 +1,4 @@
 # ThreatOps SOC Simulator - Dashboard Package
 
-from .app import SOCDashboard
-
-__all__ = [
-    'SOCDashboard'
-]
+# Dashboard is a Streamlit app, no classes to export
+__all__ = []

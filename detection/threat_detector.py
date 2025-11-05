@@ -8,6 +8,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from collections import defaultdict, Counter
 import json
 import uuid
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -592,7 +593,7 @@ class RuleEngine:
 class BehavioralBaseline:
     """Track behavioral baselines for users and entities"""
     
-    def __init__(self):
+    def __init__(self, baseline_path: Optional[str] = None):
         self.user_baselines = defaultdict(lambda: {
             'login_hours': set(),
             'login_hosts': set(),
@@ -605,6 +606,11 @@ class BehavioralBaseline:
             'typical_processes': set(),
             'network_connections': set()
         })
+        
+        # Setup persistence
+        ROOT = Path(__file__).parent.parent
+        self.baseline_path = Path(baseline_path) if baseline_path else ROOT / "models" / "baseline.json"
+        self._load_baseline()
     
     def update_baseline(self, log: 'LogEntry'):
         """Update baseline with new log entry"""
@@ -654,6 +660,70 @@ class BehavioralBaseline:
                 anomalies.append(f"Unusual user: {log.user}")
         
         return len(anomalies) > 0, "; ".join(anomalies)
+    
+    def _load_baseline(self):
+        """Load baseline from disk"""
+        if not self.baseline_path.exists():
+            return
+        
+        try:
+            with open(self.baseline_path, 'r') as f:
+                data = json.load(f)
+            
+            # Restore user baselines
+            for user, baseline in data.get('user_baselines', {}).items():
+                self.user_baselines[user] = {
+                    'login_hours': set(baseline.get('login_hours', [])),
+                    'login_hosts': set(baseline.get('login_hosts', [])),
+                    'login_ips': set(baseline.get('login_ips', [])),
+                    'process_counts': Counter(baseline.get('process_counts', {})),
+                    'command_patterns': baseline.get('command_patterns', [])
+                }
+            
+            # Restore host baselines
+            for host, baseline in data.get('host_baselines', {}).items():
+                self.host_baselines[host] = {
+                    'typical_users': set(baseline.get('typical_users', [])),
+                    'typical_processes': set(baseline.get('typical_processes', [])),
+                    'network_connections': set(baseline.get('network_connections', []))
+                }
+            
+            logger.info(f"Loaded behavioral baseline from {self.baseline_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load baseline: {e}")
+    
+    def save_baseline(self):
+        """Save baseline to disk"""
+        try:
+            self.baseline_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            data = {
+                'user_baselines': {
+                    user: {
+                        'login_hours': list(baseline['login_hours']),
+                        'login_hosts': list(baseline['login_hosts']),
+                        'login_ips': list(baseline['login_ips']),
+                        'process_counts': dict(baseline['process_counts']),
+                        'command_patterns': baseline['command_patterns']
+                    }
+                    for user, baseline in self.user_baselines.items()
+                },
+                'host_baselines': {
+                    host: {
+                        'typical_users': list(baseline['typical_users']),
+                        'typical_processes': list(baseline['typical_processes']),
+                        'network_connections': list(baseline['network_connections'])
+                    }
+                    for host, baseline in self.host_baselines.items()
+                }
+            }
+            
+            with open(self.baseline_path, 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            logger.info(f"Saved behavioral baseline to {self.baseline_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save baseline: {e}")
 
 class MLDetector:
     """Machine Learning-based anomaly detection"""
@@ -665,6 +735,12 @@ class MLDetector:
         self.is_trained = False
         self.baseline = BehavioralBaseline()
         self.opensearch_client = opensearch_client
+        
+        # Setup model path
+        ROOT = Path(__file__).parent.parent
+        self.models_dir = ROOT / "models"
+        self.model_path = self.models_dir / "model.joblib"
+        self.scaler_path = self.models_dir / "scaler.joblib"
         
     async def initialize(self):
         """Initialize ML detector"""
@@ -679,31 +755,54 @@ class MLDetector:
             try:
                 self.opensearch_client = OpenSearch(
                     hosts=[{'host': 'localhost', 'port': 9200}],
-                    use_ssl=False
+                    use_ssl=False,
+                    verify_certs=False,
+                    timeout=10,
+                    max_retries=3,
+                    retry_on_timeout=True
                 )
-                logger.info("Connected to OpenSearch")
+                # Verify connection by making a health check
+                self.opensearch_client.info()
+                logger.info("Connected to OpenSearch and verified")
             except Exception as e:
                 logger.error(f"Failed to connect to OpenSearch: {e}")
                 self.opensearch_client = None
         
-        # Initialize models
-        if self.settings.ml_config.model_type == "isolation_forest":
-            # Create IsolationForest with public API only. Avoid relying on private
-            # attributes (like estimators_) that may change between sklearn versions.
+        # Try to load existing model
+        if self.model_path.exists():
             try:
-                self.model = IsolationForest(
-                    contamination=self.settings.ml_config.contamination,
-                    random_state=42
-                )
+                import joblib
+                self.model = joblib.load(self.model_path)
+                if self.scaler_path.exists():
+                    self.scaler = joblib.load(self.scaler_path)
+                else:
+                    self.scaler = StandardScaler()
+                self.is_trained = True
+                logger.info(f"Loaded trained model from {self.model_path}")
             except Exception as e:
-                logger.error(f"Failed to initialize IsolationForest: {e}")
+                logger.warning(f"Failed to load saved model: {e}. Will train new model.")
                 self.model = None
+                self.scaler = StandardScaler()
+                self.is_trained = False
         else:
-            logger.error(f"Unsupported ML model type: {self.settings.ml_config.model_type}")
-            return
-        
-        self.scaler = StandardScaler()
-        self.is_trained = False
+            # Initialize models
+            if self.settings.ml_config.model_type == "isolation_forest":
+                # Create IsolationForest with public API only. Avoid relying on private
+                # attributes (like estimators_) that may change between sklearn versions.
+                try:
+                    self.model = IsolationForest(
+                        contamination=self.settings.ml_config.contamination,
+                        random_state=42
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to initialize IsolationForest: {e}")
+                    self.model = None
+            else:
+                logger.error(f"Unsupported ML model type: {self.settings.ml_config.model_type}")
+                return
+            
+            self.scaler = StandardScaler()
+            self.is_trained = False
         
         logger.info("ML detector initialized successfully")
     
@@ -777,6 +876,22 @@ class MLDetector:
         # Train model
         self.model.fit(features_scaled)
         self.is_trained = True
+        
+        # Save trained model
+        try:
+            self.models_dir.mkdir(parents=True, exist_ok=True)
+            import joblib
+            joblib.dump(self.model, self.model_path)
+            joblib.dump(self.scaler, self.scaler_path)
+            logger.info(f"Saved trained model to {self.model_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save model: {e}")
+        
+        # Save behavioral baseline
+        try:
+            self.baseline.save_baseline()
+        except Exception as e:
+            logger.warning(f"Failed to save baseline: {e}")
         
         logger.info("ML model trained successfully")
     
@@ -855,18 +970,43 @@ class MLDetector:
         
         try:
             # Query OpenSearch for recent logs
+            # Handle @timestamp field gracefully - if it doesn't exist, query without it
             query = {
                 "query": {
-                    "range": {
-                        "@timestamp": {
-                            "gte": "now-1h",
-                            "lte": "now"
+                    "match_all": {}
+                },
+                "size": max_logs
+            }
+            
+            # Try to use @timestamp if available, but handle gracefully if it's not mapped
+            try:
+                # Test if @timestamp field exists by trying a small query
+                test_query = {
+                    "query": {"match_all": {}},
+                    "size": 1,
+                    "sort": [{"@timestamp": {"order": "desc"}}]
+                }
+                # Try the query - if it fails, @timestamp doesn't exist
+                try:
+                    self.opensearch_client.search(index=index_pattern, body=test_query)
+                    # If successful, use @timestamp in the actual query
+                    query["query"] = {
+                        "range": {
+                            "@timestamp": {
+                                "gte": "now-1h",
+                                "lte": "now"
+                            }
                         }
                     }
-                },
-                "size": max_logs,
-                "sort": [{"@timestamp": {"order": "desc"}}]
-            }
+                    query["sort"] = [{"@timestamp": {"order": "desc"}}]
+                except Exception:
+                    # @timestamp field doesn't exist or can't be sorted, use match_all
+                    query["query"] = {"match_all": {}}
+                    logger.info("No @timestamp field found in indices, querying all logs without timestamp filter")
+            except Exception as e:
+                # If checking fails, use safe query without timestamp
+                query["query"] = {"match_all": {}}
+                logger.warning(f"Could not check for @timestamp field: {e}. Using match_all query.")
             
             response = self.opensearch_client.search(
                 index=index_pattern,
@@ -952,10 +1092,16 @@ class ThreatDetector:
             try:
                 self.opensearch_client = OpenSearch(
                     hosts=[{'host': 'localhost', 'port': 9200}],
-                    use_ssl=False
+                    use_ssl=False,
+                    verify_certs=False,
+                    timeout=10,
+                    max_retries=3,
+                    retry_on_timeout=True
                 )
                 self.ml_detector.opensearch_client = self.opensearch_client
-                logger.info("Connected to OpenSearch")
+                # Verify connection by making a health check
+                self.opensearch_client.info()
+                logger.info("Connected to OpenSearch and verified")
             except Exception as e:
                 logger.error(f"Failed to connect to OpenSearch: {e}")
                 self.opensearch_client = None

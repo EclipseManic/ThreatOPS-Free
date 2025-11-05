@@ -31,15 +31,35 @@ import time
 import subprocess
 import webbrowser
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple, Any, TextIO
+
+# Project root - defined first to ensure it's always available
+ROOT = Path(__file__).parent
+
+# Load environment variables from .env file early
+try:
+    from dotenv import load_dotenv
+    env_path = ROOT / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+        # Use ASCII-safe message for Windows compatibility
+        try:
+            print(f"[OK] Loaded environment variables from {env_path}")
+        except UnicodeEncodeError:
+            print("[OK] Loaded environment variables from .env file")
+    else:
+        load_dotenv()  # Try current directory
+except ImportError:
+    print("[WARNING] python-dotenv not installed. Environment variables must be set manually.")
+except Exception as e:
+    print(f"[WARNING] Error loading .env file: {e}")
 
 try:
     import psutil
 except ImportError:
     psutil = None
 
-# Project root
-ROOT = Path(__file__).parent
+# ROOT is already defined above, just add to path
 sys.path.insert(0, str(ROOT))
 
 
@@ -50,22 +70,27 @@ def _setup_logging() -> None:
     except Exception:
         utf8_stream = sys.stdout
 
-    class SafeStreamHandler(logging.StreamHandler):
-        def emit(self, record: logging.LogRecord) -> None:  # type: ignore[override]
+    class SafeStreamHandler(logging.StreamHandler[TextIO]):  # type: ignore[type-arg]
+        def emit(self, record: logging.LogRecord) -> None:
             try:
                 super().emit(record)
             except UnicodeEncodeError:
                 try:
                     msg = self.format(record) + self.terminator
-                    if hasattr(self.stream, "buffer"):
-                        self.stream.buffer.write(msg.encode("utf-8", errors="replace"))
-                        try:
-                            self.stream.buffer.flush()
-                        except Exception:
-                            pass
-                    else:
-                        safe_msg = msg.encode("utf-8", errors="replace").decode("utf-8")
-                        self.stream.write(safe_msg)
+                    stream = self.stream
+                    # Check if stream has a buffer attribute (like TextIOWrapper)
+                    if hasattr(stream, "buffer"):
+                        buffer = getattr(stream, "buffer", None)
+                        if buffer is not None:
+                            buffer.write(msg.encode("utf-8", errors="replace"))
+                            try:
+                                buffer.flush()
+                            except Exception:
+                                pass
+                            return
+                    # Fallback for streams without buffer
+                    safe_msg = msg.encode("utf-8", errors="replace").decode("utf-8")
+                    stream.write(safe_msg)
                 except Exception:
                     pass
 
@@ -94,15 +119,63 @@ def create_directories() -> None:
         d.mkdir(parents=True, exist_ok=True)
 
 
+def check_opensearch_health(timeout: int = 5, max_retries: int = 12, retry_interval: int = 10) -> bool:
+    """
+    Check if OpenSearch is running and healthy.
+    
+    Args:
+        timeout: Timeout for individual health check
+        max_retries: Maximum number of retry attempts
+        retry_interval: Seconds to wait between retries
+    
+    Returns:
+        True if OpenSearch is healthy, False otherwise
+    """
+    logger = logging.getLogger("run")
+    
+    try:
+        import requests
+    except ImportError:
+        logger.warning("requests library not available for health check")
+        return False
+    
+    for attempt in range(max_retries):
+        try:
+            # Check OpenSearch health (no auth needed when security is disabled)
+            response = requests.get(
+                "http://localhost:9200",
+                timeout=timeout
+            )
+            if response.status_code == 200:
+                logger.info("[OK] OpenSearch is healthy and ready")
+                return True
+            else:
+                logger.warning(f"OpenSearch returned unexpected status code: {response.status_code}")
+        except requests.exceptions.ConnectionError:
+            if attempt < max_retries - 1:
+                logger.info(f"OpenSearch not responding, waiting {retry_interval}s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(retry_interval)
+            else:
+                logger.error("[X] OpenSearch is not responding after all retry attempts")
+        except Exception as e:
+            logger.error(f"[X] Error checking OpenSearch health: {e}")
+            break
+    
+    return False
+
+
 class ThreatOpsPipeline:
     """OpenSearch-based SIEM Pipeline Orchestrator"""
 
     def __init__(self):
         from config.settings import Settings
         from simulation.attack_simulator import AttackSimulator
-        from detection.threat_detector import ThreatDetector
+        from detection.threat_detector import ThreatDetector, Alert
         from enrichment.intel_enricher import IntelEnricher
         from scoring.risk_scorer import RiskScorer
+        
+        # Make Alert available for type hints
+        self._Alert = Alert
 
         self.settings = Settings()
         self.attack_simulator = AttackSimulator(self.settings)
@@ -122,7 +195,7 @@ class ThreatOpsPipeline:
         
         self.logger.info("Initialization complete")
 
-    async def run_simulation(self):
+    async def run_simulation(self) -> List[Any]:
         """Generate simulated attack logs and write to file for Filebeat to collect"""
         self.logger.info("=== Running Attack Simulation ===")
         
@@ -141,12 +214,12 @@ class ThreatOpsPipeline:
         self.logger.info("[SUCCESS] Simulation complete - logs written to data/sim_attacks.log for Filebeat")
         return sim_logs
 
-    async def run_detection(self):
+    async def run_detection(self) -> List[Any]:
         """Query OpenSearch for logs and run threat detection"""
         self.logger.info("=== Running Threat Detection ===")
         
         # Use ML detector's detect method which queries OpenSearch
-        alerts = await self.threat_detector.ml_detector.detect(
+        alerts: List[Any] = await self.threat_detector.ml_detector.detect(  # type: ignore[assignment]
             index_pattern="filebeat-*",
             max_logs=10000
         )
@@ -154,52 +227,52 @@ class ThreatOpsPipeline:
         self.logger.info(f"[SUCCESS] Detection complete - generated {len(alerts)} alerts in OpenSearch")
         return alerts
 
-    async def run_enrichment(self):
+    async def run_enrichment(self) -> List[Any]:
         """Query OpenSearch for alerts and enrich with threat intelligence"""
         self.logger.info("=== Running Threat Intelligence Enrichment ===")
         
-        enriched_alerts = await self.intel_enricher.enrich_alerts_from_opensearch()
+        enriched_alerts: List[Any] = await self.intel_enricher.enrich_alerts_from_opensearch()  # type: ignore[assignment]
         
         self.logger.info(f"[SUCCESS] Enrichment complete - enriched {len(enriched_alerts)} alerts in OpenSearch")
         return enriched_alerts
 
-    async def run_scoring(self):
+    async def run_scoring(self) -> List[Any]:
         """Query OpenSearch for enriched alerts and calculate risk scores"""
         self.logger.info("=== Running Risk Scoring ===")
         
-        scored_alerts = await self.risk_scorer.score_alerts_from_opensearch()
+        scored_alerts: List[Any] = await self.risk_scorer.score_alerts_from_opensearch()  # type: ignore[assignment]
         
         self.logger.info(f"[SUCCESS] Scoring complete - scored {len(scored_alerts)} alerts in OpenSearch")
         return scored_alerts
 
-    async def run_full_pipeline(self):
+    async def run_full_pipeline(self) -> Optional[List[Any]]:
         """Run the complete pipeline: Detection → Enrichment → Scoring"""
         self.logger.info("========================================")
         self.logger.info("Running Full SIEM Pipeline")
         self.logger.info("========================================")
         
         # Step 1: Detection
-        alerts = await self.run_detection()
+        alerts: List[Any] = await self.run_detection()
         
         if not alerts:
             self.logger.warning("No alerts detected, skipping enrichment and scoring")
-            return
+            return None
         
         # Wait a bit for OpenSearch to index
         await asyncio.sleep(2)
         
         # Step 2: Enrichment
-        enriched_alerts = await self.run_enrichment()
+        enriched_alerts: List[Any] = await self.run_enrichment()
         
         if not enriched_alerts:
             self.logger.warning("No alerts enriched, skipping scoring")
-            return
+            return None
         
         # Wait a bit for OpenSearch to index
         await asyncio.sleep(2)
         
         # Step 3: Scoring
-        scored_alerts = await self.run_scoring()
+        scored_alerts: List[Any] = await self.run_scoring()
         
         # Lines 199-205: Pipeline completion summary
         # This logs the final results of the detection pipeline
@@ -212,7 +285,7 @@ class ThreatOpsPipeline:
         
         return scored_alerts
 
-    async def run_continuous(self, interval: int = 60):
+    async def run_continuous(self, interval: int = 60) -> None:
         """Run the pipeline continuously at specified interval"""
         self.logger.info(f"Starting continuous mode (interval: {interval}s)")
         self.logger.info("Press Ctrl+C to stop")
@@ -230,7 +303,7 @@ class ThreatOpsPipeline:
             self.logger.info("Continuous mode stopped by user")
 
 
-def start_all_services(with_dashboards=True):
+def start_all_services(with_dashboards: bool = True) -> List[Tuple[str, subprocess.Popen[bytes]]]:
     """Start OpenSearch, Filebeat, and OpenSearch Dashboards"""
     logger = logging.getLogger("run")
     
@@ -239,9 +312,8 @@ def start_all_services(with_dashboards=True):
     FILEBEAT_EXE = Path(r"D:\Cusor AI\filebeat-9.2.0-windows-x86_64\filebeat-9.2.0-windows-x86_64\filebeat.exe")
     DASHBOARDS_BIN = Path(r"D:\Cusor AI\opensearch-dashboards-3.3.0\bin\opensearch-dashboards.bat")
     
-    processes = []
-    process_pids = []  # Store PIDs for cleanup
-    total_services = 3 if with_dashboards else 2
+    processes: List[Tuple[str, subprocess.Popen[bytes]]] = []
+    process_pids: List[int] = []  # Store PIDs for cleanup
     
     # Start OpenSearch
     logger.info("=" * 70)
@@ -257,16 +329,13 @@ def start_all_services(with_dashboards=True):
             processes.append(('OpenSearch', proc))
             process_pids.append(proc.pid)
             logger.info("[OK] OpenSearch started")
-            logger.info("  Waiting 30 seconds for initialization...")
-            time.sleep(30)
+            logger.info("  Waiting for OpenSearch to become ready...")
             
-            # Verify OpenSearch is running
-            try:
-                import requests
-                response = requests.get("http://localhost:9200", timeout=5)
-                logger.info(f"[OK] OpenSearch is responding (status: {response.status_code})")
-            except Exception as e:
-                logger.warning(f"OpenSearch may still be starting: {e}")
+            # Wait for OpenSearch to become healthy (with retries)
+            if check_opensearch_health(timeout=5, max_retries=12, retry_interval=10):
+                logger.info("[OK] OpenSearch is ready and healthy")
+            else:
+                logger.error("[X] OpenSearch failed to become healthy - pipeline may not work correctly")
         except Exception as e:
             logger.error(f"[X] Failed to start OpenSearch: {e}")
     else:
@@ -341,13 +410,14 @@ def start_all_services(with_dashboards=True):
     logger.info("")
     
     # Store process PIDs globally for cleanup
-    start_all_services.process_pids = process_pids
-    start_all_services.processes = processes
+    # Using type: ignore for dynamic attribute assignment
+    start_all_services.process_pids = process_pids  # type: ignore[attr-defined]
+    start_all_services.processes = processes  # type: ignore[attr-defined]
     
     return processes
 
 
-def open_dashboard():
+def open_dashboard() -> Optional[subprocess.Popen[bytes]]:
     """Open the Streamlit dashboard in browser"""
     logger = logging.getLogger("run")
     dashboard_app = ROOT / "dashboard" / "app.py"
@@ -361,7 +431,7 @@ def open_dashboard():
         venv_python = ROOT / ".venv" / "Scripts" / "python.exe"
         python_exe = str(venv_python) if venv_python.exists() else "python"
         
-        proc = subprocess.Popen(
+        proc: subprocess.Popen[bytes] = subprocess.Popen(
             [python_exe, "-m", "streamlit", "run", str(dashboard_app), "--server.headless", "true"],
             cwd=str(ROOT),
             creationflags=subprocess.CREATE_NEW_CONSOLE
@@ -369,8 +439,8 @@ def open_dashboard():
         
         # Store Streamlit PID for cleanup
         if not hasattr(open_dashboard, 'process_pids'):
-            open_dashboard.process_pids = []
-        open_dashboard.process_pids.append(proc.pid)
+            open_dashboard.process_pids = []  # type: ignore[attr-defined]
+        open_dashboard.process_pids.append(proc.pid)  # type: ignore[attr-defined]
         
         logger.info("[OK] Dashboard starting...")
         logger.info("  Waiting 5 seconds for Streamlit to start...")
@@ -382,7 +452,7 @@ def open_dashboard():
         return None
 
 
-def open_all_dashboards():
+def open_all_dashboards() -> None:
     """Open ALL three dashboards in browser"""
     logger = logging.getLogger("run")
     
@@ -412,7 +482,7 @@ def open_all_dashboards():
     logger.info("")
 
 
-def cleanup_all_processes():
+def cleanup_all_processes() -> None:
     """Kill all background processes started by this script"""
     logger = logging.getLogger("run")
     
@@ -438,7 +508,7 @@ def cleanup_all_processes():
         for cmd in cleanup_commands:
             try:
                 os.system(cmd + " >nul 2>&1")
-            except:
+            except Exception:
                 pass
         
         logger.info("[OK] Cleanup attempted")
@@ -446,15 +516,23 @@ def cleanup_all_processes():
         logger.info("")
         return
     
-    all_pids = []
+    all_pids: List[int] = []
     
     # Get PIDs from services
     if hasattr(start_all_services, 'process_pids'):
-        all_pids.extend(start_all_services.process_pids)
+        process_pids = getattr(start_all_services, 'process_pids', [])  # type: ignore[attr-defined]
+        if isinstance(process_pids, list):
+            # Filter to ensure all items are integers
+            int_pids: List[int] = [pid for pid in process_pids if isinstance(pid, int)]  # type: ignore[misc]
+            all_pids.extend(int_pids)
     
     # Get Streamlit PID
     if hasattr(open_dashboard, 'process_pids'):
-        all_pids.extend(open_dashboard.process_pids)
+        dashboard_pids = getattr(open_dashboard, 'process_pids', [])  # type: ignore[attr-defined]
+        if isinstance(dashboard_pids, list):
+            # Filter to ensure all items are integers
+            int_pids: List[int] = [pid for pid in dashboard_pids if isinstance(pid, int)]  # type: ignore[misc]
+            all_pids.extend(int_pids)
     
     # Also kill by process name (catch any we missed)
     process_names = ['opensearch', 'filebeat', 'node', 'streamlit', 'python']
@@ -470,21 +548,26 @@ def cleanup_all_processes():
             pass
     
     # Kill by name
-    for proc in psutil.process_iter(['pid', 'name']):
-        try:
-            proc_name = proc.info['name'].lower()
-            if any(name in proc_name for name in process_names):
-                # Check if it's from our project
-                try:
-                    cmdline = ' '.join(proc.cmdline()).lower()
-                    if 'threat_ops' in cmdline or 'opensearch' in cmdline or 'filebeat' in cmdline or 'opensearch-dashboards' in cmdline:
-                        proc.terminate()
-                        killed_count += 1
-                        logger.info(f"  [OK] Killed {proc_name} (PID {proc.info['pid']})")
-                except:
-                    pass
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
-            pass
+    try:
+        for proc in psutil.process_iter(['pid', 'name']):  # type: ignore[call-overload]
+            try:
+                proc_info = proc.info if hasattr(proc, 'info') else {}
+                proc_name = str(proc_info.get('name', '')).lower() if proc_info else ''
+                if any(name in proc_name for name in process_names):
+                    # Check if it's from our project
+                    try:
+                        cmdline = ' '.join(proc.cmdline()).lower()
+                        if 'threat_ops' in cmdline or 'opensearch' in cmdline or 'filebeat' in cmdline or 'opensearch-dashboards' in cmdline:
+                            proc.terminate()
+                            killed_count += 1
+                            proc_pid = proc_info.get('pid', 'unknown') if proc_info else 'unknown'
+                            logger.info(f"  [OK] Killed {proc_name} (PID {proc_pid})")
+                    except Exception:
+                        pass
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+    except Exception:
+        pass
     
     logger.info(f"[OK] Cleaned up {killed_count} processes")
     logger.info("=" * 70)
@@ -637,7 +720,7 @@ Note: --mode all now ALWAYS starts OpenSearch Dashboards (no login required)
             logger.info("")
             logger.info("Services running:")
             logger.info("   ThreatOps UI:      http://localhost:8501  <- Your main SIEM dashboard")
-            logger.info("   OpenSearch DB:     http://localhost:5601  <- Advanced analytics (no login required)")
+            logger.info("   OpenSearch DB:     http://localhost:5601  <- Advanced analytics (NO LOGIN NEEDED - anonymous access enabled)")
             logger.info("   OpenSearch API:    http://localhost:9200  <- Backend (for developers)")
             logger.info("")
             logger.info("Log Sources Active:")
@@ -649,6 +732,10 @@ Note: --mode all now ALWAYS starts OpenSearch Dashboards (no login required)
             logger.info("=" * 70)
             logger.info("")
             logger.info("[!] Press Enter to EXIT and close all background services")
+            logger.info("")
+            logger.info("NOTE: Java warnings in OpenSearch console are harmless - they're from")
+            logger.info("      deprecated Java APIs that OpenSearch uses. The window stays")
+            logger.info("      open because OpenSearch runs continuously in the background.")
             logger.info("=" * 70)
             
             try:
@@ -666,6 +753,14 @@ Note: --mode all now ALWAYS starts OpenSearch Dashboards (no login required)
         logger.info("=" * 60)
         logger.info("ThreatOps SIEM Pipeline")
         logger.info("=" * 60)
+        
+        # Check OpenSearch health for modes that need it
+        if args.mode in ["detect", "enrich", "score", "pipeline", "continuous"]:
+            logger.info("Checking OpenSearch connection...")
+            if not check_opensearch_health(timeout=5, max_retries=1, retry_interval=0):
+                logger.error("[X] OpenSearch is not running!")
+                logger.error("Please start OpenSearch first or use: python run.py --mode all")
+                return 1
         
         pipeline = ThreatOpsPipeline()
         asyncio.run(pipeline.initialize())

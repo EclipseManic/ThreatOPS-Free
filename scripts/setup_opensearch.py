@@ -22,7 +22,6 @@ from typing import Dict, Any
 
 try:
     import requests
-    from requests.auth import HTTPBasicAuth
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 except ImportError:
@@ -38,13 +37,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # OpenSearch connection settings
+# OpenSearch security is currently disabled (requires SSL certificates when enabled)
 OPENSEARCH_HOST = "http://localhost:9200"
-OPENSEARCH_USER = "admin"
-OPENSEARCH_PASSWORD = "admin"
 
-# HTTP session with auth
+# HTTP session without auth (OpenSearch security is disabled)
 session = requests.Session()
-session.auth = HTTPBasicAuth(OPENSEARCH_USER, OPENSEARCH_PASSWORD)
 session.verify = False  # For self-signed certificates
 
 

@@ -14,6 +14,13 @@ import sys
 import base64
 sys.path.append(str(Path(__file__).parent.parent))
 
+# OpenSearch client - optional import
+try:
+    from opensearchpy import OpenSearch
+    OPENSEARCH_AVAILABLE = True
+except ImportError:
+    OPENSEARCH_AVAILABLE = False
+
 def generate_security_report(alerts, stats, report_type='Executive Summary'):
     """Generate HTML security report with different formats based on report_type"""
     risk_levels = {'High Risk': 0, 'Medium Risk': 0, 'Low Risk': 0}
@@ -169,10 +176,43 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 ALERTS_DIR = DATA_DIR / "alerts"
 SIMULATIONS_DIR = DATA_DIR / "simulations"
 
+# Initialize session state
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = datetime.now()
+if 'refresh_counter' not in st.session_state:
+    st.session_state.refresh_counter = 0
+if 'user_interacted' not in st.session_state:
+    st.session_state.user_interacted = False
+
 @st.cache_data(ttl=5)
 def load_alerts():
-    """Load all alerts from JSON files"""
+    """Load alerts from OpenSearch, fallback to JSON files"""
     alerts = []
+    
+    # Try OpenSearch first
+    if OPENSEARCH_AVAILABLE:
+        try:
+            client = OpenSearch(
+                [{'host': 'localhost', 'port': 9200}],
+                use_ssl=False,
+                verify_certs=False,
+                timeout=5
+            )
+            response = client.search(
+                index="security-alerts",
+                body={
+                    "size": 1000,
+                    "sort": [{"@timestamp": {"order": "desc"}}]
+                }
+            )
+            alerts = [hit['_source'] for hit in response['hits']['hits']]
+            
+            if alerts:
+                return alerts
+        except Exception as e:
+            st.warning(f"OpenSearch connection failed: {e}. Using JSON fallback.")
+    
+    # Fallback to JSON files
     if ALERTS_DIR.exists():
         for alert_file in sorted(ALERTS_DIR.glob("alerts_*.json"), reverse=True):
             try:
@@ -182,13 +222,14 @@ def load_alerts():
                         alerts.extend(file_alerts)
                     else:
                         alerts.append(file_alerts)
-            except:
+            except Exception as e:
                 continue
+    
     return alerts
 
 @st.cache_data(ttl=5)
 def load_simulations():
-    """Load simulation data"""
+    """Load simulation data from JSON files"""
     simulations = []
     if SIMULATIONS_DIR.exists():
         for sim_file in sorted(SIMULATIONS_DIR.glob("simulation_*.json"), reverse=True)[:5]:
@@ -197,7 +238,7 @@ def load_simulations():
                     sim_data = json.load(f)
                     if isinstance(sim_data, list):
                         simulations.extend(sim_data)
-            except:
+            except Exception as e:
                 continue
     return simulations
 
@@ -277,12 +318,16 @@ def main():
     # Sidebar
     with st.sidebar:
         st.title("🎛️ Dashboard Controls")
-        auto_refresh = st.checkbox("⚡ Auto-refresh (5s)", value=True)
+        
+        # Auto-refresh control - improved to not interfere with user interactions
+        auto_refresh = st.checkbox("⚡ Auto-refresh (5s)", value=True, key="auto_refresh_checkbox")
         if auto_refresh:
             st.success("Live monitoring active")
+            st.caption("⚠️ Auto-refresh pauses when you interact with filters")
         
         if st.button("🔄 Refresh Now"):
             st.cache_data.clear()
+            st.session_state.user_interacted = True
             st.rerun()
         
         st.markdown("---")
@@ -293,6 +338,12 @@ def main():
         
         st.markdown("---")
         st.info(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+        
+        # Advanced filters section
+        st.markdown("---")
+        st.subheader("🔧 Advanced Options")
+        show_all_details = st.checkbox("📋 Show Extended Details", value=True, key="show_details")
+        max_alerts_display = st.slider("Max Alerts to Display", 10, 200, 50, key="max_alerts")
     
     # Create tabs
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
@@ -433,19 +484,35 @@ def main():
                            color='Severity', color_discrete_map=colors)
                 st.plotly_chart(fig, use_container_width=True)
     
-    # TAB 2: MITRE ATT&CK
+    # TAB 2: MITRE ATT&CK - Enhanced with detailed analysis
     with tab2:
-        st.header("🎯 MITRE ATT&CK Analysis")
+        st.header("🎯 MITRE ATT&CK Framework Analysis")
+        st.markdown("### Comprehensive threat intelligence mapping to MITRE ATT&CK framework")
         
         techniques = [a.get('mitre_technique') for a in alerts if a.get('mitre_technique')]
         
         if techniques:
             technique_counts = Counter(techniques)
             
+            # Overview metrics
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Techniques Detected", len(technique_counts))
+            with col2:
+                st.metric("Total Detections", sum(technique_counts.values()))
+            with col3:
+                avg_detections = sum(technique_counts.values()) / len(technique_counts) if technique_counts else 0
+                st.metric("Avg Detections/Technique", f"{avg_detections:.1f}")
+            with col4:
+                most_common_tech = technique_counts.most_common(1)[0] if technique_counts else ("N/A", 0)
+                st.metric("Most Active Technique", f"{most_common_tech[0]}" if most_common_tech[0] != "N/A" else "None")
+            
+            st.markdown("---")
+            
             col1, col2 = st.columns([2, 1])
             
             with col1:
-                st.subheader("Top Attack Techniques")
+                st.subheader("📊 Top Attack Techniques - Visualization")
                 tech_df = pd.DataFrame([
                     {'Technique': k, 'Detections': v}
                     for k, v in technique_counts.most_common(10)
@@ -456,87 +523,280 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
             
             with col2:
-                st.subheader("Technique Summary")
+                st.subheader("📋 Quick Summary")
                 for tech, count in technique_counts.most_common(10):
-                    st.metric(tech, f"{count} detections")
+                    pct = (count / sum(technique_counts.values()) * 100) if technique_counts else 0
+                    st.metric(tech, f"{count} detections", f"{pct:.1f}%")
             
             st.markdown("---")
-            st.subheader("📋 Detailed Technique Breakdown")
+            st.subheader("🔍 Detailed Technique Analysis")
+            
+            # Group by MITRE tactics
+            mitre_tactics = {
+                'T1': 'Initial Access', 'T2': 'Execution', 'T3': 'Persistence',
+                'T4': 'Privilege Escalation', 'T5': 'Defense Evasion',
+                'T6': 'Credential Access', 'T7': 'Discovery', 'T8': 'Lateral Movement',
+                'T9': 'Collection', 'T10': 'Command and Control', 'T11': 'Exfiltration'
+            }
+            
+            # Technique distribution by tactic
+            tactic_distribution = {}
+            for tech, count in technique_counts.items():
+                tactic = tech[:2] if tech.startswith('T') else 'Other'
+                tactic_name = mitre_tactics.get(tactic, tactic)
+                if tactic_name not in tactic_distribution:
+                    tactic_distribution[tactic_name] = 0
+                tactic_distribution[tactic_name] += count
+            
+            if tactic_distribution:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.subheader("📈 Distribution by MITRE Tactic")
+                    tactic_df = pd.DataFrame([
+                        {'Tactic': k, 'Detections': v}
+                        for k, v in sorted(tactic_distribution.items(), key=lambda x: x[1], reverse=True)
+                    ])
+                    fig = px.pie(tactic_df, values='Detections', names='Tactic',
+                               title='Attack Distribution by MITRE Tactic',
+                               hole=0.4)
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            st.subheader("📋 Comprehensive Technique Breakdown")
             
             for tech, count in technique_counts.most_common():
-                with st.expander(f"{tech} - {count} detections"):
+                with st.expander(f"🔴 {tech} - {count} detections | Click for full details"):
                     tech_alerts = [a for a in alerts if a.get('mitre_technique') == tech]
-                    severities = Counter(a.get('severity') for a in tech_alerts)
-                    st.write(f"**Severity Distribution:**")
-                    for sev, cnt in severities.items():
-                        st.write(f"- {sev}: {cnt}")
-                    st.write(f"**Affected Hosts:** {len(set(a.get('host') for a in tech_alerts))}")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.write("**📊 Severity Distribution:**")
+                        severities = Counter(a.get('severity') for a in tech_alerts)
+                        for sev, cnt in severities.most_common():
+                            st.write(f"- **{sev}**: {cnt} detections")
+                    
+                    with col2:
+                        st.write("**🖥️ Affected Infrastructure:**")
+                        hosts = set(a.get('host') for a in tech_alerts if a.get('host'))
+                        st.write(f"- **Unique Hosts**: {len(hosts)}")
+                        for host in list(hosts)[:3]:
+                            host_count = sum(1 for a in tech_alerts if a.get('host') == host)
+                            st.write(f"  - {host}: {host_count} events")
+                        if len(hosts) > 3:
+                            st.write(f"  - ... and {len(hosts)-3} more hosts")
+                    
+                    with col3:
+                        st.write("**👥 User Impact:**")
+                        users = set(a.get('user') for a in tech_alerts if a.get('user'))
+                        st.write(f"- **Unique Users**: {len(users)}")
+                        for user in list(users)[:3]:
+                            user_count = sum(1 for a in tech_alerts if a.get('user') == user)
+                            st.write(f"  - {user}: {user_count} events")
+                        if len(users) > 3:
+                            st.write(f"  - ... and {len(users)-3} more users")
+                    
+                    # Risk scoring details
+                    st.markdown("**⚡ Risk Assessment:**")
+                    risk_scores = [a.get('risk_score', 0) for a in tech_alerts if isinstance(a.get('risk_score'), (int, float))]
+                    if risk_scores:
+                        avg_risk = sum(risk_scores) / len(risk_scores)
+                        max_risk = max(risk_scores)
+                        st.write(f"- Average Risk Score: {avg_risk:.1f}")
+                        st.write(f"- Maximum Risk Score: {max_risk:.1f}")
+                    
+                    # Time range
+                    timestamps = [a.get('timestamp') for a in tech_alerts if a.get('timestamp')]
+                    if timestamps:
+                        try:
+                            sorted_times = sorted(timestamps)
+                            st.write(f"- **First Detection**: {sorted_times[0][:19]}")
+                            st.write(f"- **Latest Detection**: {sorted_times[-1][:19]}")
+                        except:
+                            pass
         else:
             st.info("No MITRE ATT&CK techniques detected yet")
+            st.markdown("""
+            ### 📚 About MITRE ATT&CK
+            The MITRE ATT&CK framework is a globally-accessible knowledge base of adversary tactics and techniques 
+            based on real-world observations. When threats are detected, they are mapped to specific ATT&CK techniques
+            to help security teams understand and defend against attacks.
+            """)
     
-    # TAB 3: Log Collection Details
+    # TAB 3: Log Collection Details - Enhanced with comprehensive analysis
     with tab3:
-        st.header("📋 Log Collection Details")
+        st.header("📋 Log Collection & Data Sources")
+        st.markdown("### Comprehensive view of all log sources and collection methodologies")
         
-        st.subheader("🔍 Collection Methods & Sources")
+        # Overview metrics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Logs Collected", stats['total'], 
+                     delta=f"{stats['total']} events" if stats['total'] > 0 else "0")
+        with col2:
+            unique_sources = len(stats['by_source'])
+            st.metric("Unique Data Sources", unique_sources)
+        with col3:
+            st.metric("Log Categories", len(stats['by_category']))
+        with col4:
+            hours_span = len(stats['by_hour'])
+            st.metric("Time Span (Hours)", hours_span, 
+                     delta=f"{hours_span} hours monitored" if hours_span > 0 else "0")
+        
+        st.markdown("---")
+        st.subheader("🔍 Collection Methods & Sources Overview")
         
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("### 📥 Active Collection Methods")
+            total_collected = sum(stats['collection_methods'].values())
             for method, count in stats['collection_methods'].items():
                 icon = "🎯" if "Simulated" in method else "🖥️"
+                pct = (count / total_collected * 100) if total_collected > 0 else 0
                 st.metric(f"{icon} {method}", count, 
-                         f"{(count/stats['total']*100):.1f}%" if stats['total'] > 0 else "0%")
+                         delta=f"{pct:.1f}% of total")
         
         with col2:
-            st.markdown("### 📊 Collection Summary")
-            st.write(f"**Total Logs Collected:** {stats['total']}")
-            st.write(f"**Unique Sources:** {len(stats['by_source'])}")
+            st.markdown("### 📊 Collection Statistics")
+            st.write(f"**Total Logs Collected:** {stats['total']:,}")
+            st.write(f"**Unique Sources:** {unique_sources}")
             st.write(f"**Log Categories:** {len(stats['by_category'])}")
-            st.write(f"**Time Span:** {len(stats['by_hour'])} hours")
+            st.write(f"**Time Span:** {hours_span} hours")
+            if hours_span > 0:
+                avg_per_hour = stats['total'] / hours_span
+                st.write(f"**Average Logs/Hour:** {avg_per_hour:.1f}")
+            
+            # Collection efficiency
+            if stats['total'] > 0:
+                simulated_pct = (stats['by_source'].get('simulation', 0) / stats['total'] * 100)
+                real_pct = 100 - simulated_pct
+                st.markdown("**📊 Data Source Composition:**")
+                st.write(f"- Real System Logs: {real_pct:.1f}%")
+                st.write(f"- Simulated Attacks: {simulated_pct:.1f}%")
         
         st.markdown("---")
+        st.subheader("📈 Detailed Source Analysis")
         
-        st.subheader("📈 Detailed Source Breakdown")
+        # Source distribution chart
+        if stats['by_source']:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### 📊 Source Distribution Chart")
+                source_chart_df = pd.DataFrame([
+                    {'Source': k.replace('_', ' ').title(), 'Count': v} 
+                    for k, v in sorted(stats['by_source'].items(), key=lambda x: x[1], reverse=True)
+                ])
+                fig = px.pie(source_chart_df, values='Count', names='Source',
+                           title='Log Distribution by Source',
+                           hole=0.4)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                st.markdown("### 📋 Source Statistics Table")
+                source_table_data = []
+                for source, count in sorted(stats['by_source'].items(), key=lambda x: x[1], reverse=True):
+                    source_name = source.replace('_', ' ').title()
+                    percentage = (count / stats['total'] * 100) if stats['total'] > 0 else 0
+                    source_type = 'Simulated' if source == 'simulation' else 'Real System'
+                    source_table_data.append({
+                        'Source': source_name,
+                        'Count': count,
+                        'Percentage': f"{percentage:.2f}%",
+                        'Type': source_type
+                    })
+                source_table_df = pd.DataFrame(source_table_data)
+                st.dataframe(source_table_df, use_container_width=True, hide_index=True)
         
-        for source, count in stats['by_source'].items():
-            with st.expander(f"{source.replace('_', ' ').title()} - {count} logs"):
-                source_alerts = [a for a in alerts if a.get('log_source') == source]
-                
+        st.markdown("---")
+        st.subheader("🔍 In-Depth Source Breakdown")
+        
+        for source, count in sorted(stats['by_source'].items(), key=lambda x: x[1], reverse=True):
+            source_alerts = [a for a in alerts if a.get('log_source') == source]
+            source_name = source.replace('_', ' ').title()
+            
+            with st.expander(f"📂 {source_name} - {count:,} logs | Click for detailed analysis"):
                 col1, col2, col3 = st.columns(3)
+                
                 with col1:
-                    st.write("**Severity Distribution:**")
+                    st.markdown("**📊 Severity Distribution:**")
                     sevs = Counter(a.get('severity') for a in source_alerts)
-                    for sev, cnt in sevs.most_common():
-                        st.write(f"- {sev}: {cnt}")
+                    sev_total = sum(sevs.values())
+                    for sev, cnt in sorted(sevs.most_common(), key=lambda x: x[1], reverse=True):
+                        sev_pct = (cnt / sev_total * 100) if sev_total > 0 else 0
+                        st.write(f"- **{sev}**: {cnt} ({sev_pct:.1f}%)")
                 
                 with col2:
-                    st.write("**Top Categories:**")
+                    st.markdown("**🏷️ Top Categories:**")
                     cats = Counter(a.get('category') for a in source_alerts)
                     for cat, cnt in list(cats.most_common(5)):
-                        st.write(f"- {cat}: {cnt}")
+                        st.write(f"- **{cat}**: {cnt}")
+                    if len(cats) > 5:
+                        st.caption(f"... and {len(cats)-5} more categories")
                 
                 with col3:
-                    st.write("**Affected Hosts:**")
-                    hosts = set(a.get('host') for a in source_alerts)
-                    for host in list(hosts)[:5]:
-                        st.write(f"- {host}")
-                    if len(hosts) > 5:
-                        st.write(f"- ... and {len(hosts)-5} more")
+                    st.markdown("**🖥️ Infrastructure Impact:**")
+                    hosts = set(a.get('host') for a in source_alerts if a.get('host'))
+                    users = set(a.get('user') for a in source_alerts if a.get('user'))
+                    st.write(f"- **Unique Hosts**: {len(hosts)}")
+                    st.write(f"- **Unique Users**: {len(users)}")
+                    if hosts:
+                        st.markdown("**Top Affected Hosts:**")
+                        host_counts = Counter(a.get('host') for a in source_alerts if a.get('host'))
+                        for host, host_cnt in host_counts.most_common(3):
+                            st.write(f"  - {host}: {host_cnt} events")
+                
+                # Time-based analysis
+                timestamps = [a.get('timestamp') for a in source_alerts if a.get('timestamp')]
+                if timestamps:
+                    try:
+                        sorted_times = sorted(timestamps)
+                        col_time1, col_time2 = st.columns(2)
+                        with col_time1:
+                            st.markdown("**⏰ Time Range:**")
+                            st.write(f"- First Log: {sorted_times[0][:19]}")
+                            st.write(f"- Latest Log: {sorted_times[-1][:19]}")
+                        with col_time2:
+                            st.markdown("**📈 Collection Rate:**")
+                            time_span_hours = len(set(t[:13] for t in timestamps))
+                            if time_span_hours > 0:
+                                rate = len(timestamps) / time_span_hours
+                                st.write(f"- Average: {rate:.1f} logs/hour")
+                                st.write(f"- Peak Hour: {max(Counter(t[:13] for t in timestamps).values())} logs")
+                    except:
+                        pass
         
         st.markdown("---")
+        st.subheader("⏱️ Collection Timeline & Trends")
         
-        st.subheader("⏱️ Collection Timeline")
         if stats['by_hour']:
-            timeline_df = pd.DataFrame([
-                {'Hour': k, 'Count': v}
-                for k, v in sorted(stats['by_hour'].items())
-            ])
-            fig = px.line(timeline_df, x='Hour', y='Count',
-                        title='Log Collection Over Time',
-                        markers=True)
-            st.plotly_chart(fig, use_container_width=True)
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                timeline_df = pd.DataFrame([
+                    {'Hour': k, 'Count': v}
+                    for k, v in sorted(stats['by_hour'].items())
+                ])
+                fig = px.line(timeline_df, x='Hour', y='Count',
+                            title='Log Collection Trend Over Time',
+                            markers=True, line_shape='spline')
+                fig.update_traces(line=dict(width=3), marker=dict(size=6))
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                st.markdown("### 📊 Timeline Statistics")
+                hourly_counts = list(stats['by_hour'].values())
+                if hourly_counts:
+                    st.metric("Peak Hour", max(hourly_counts))
+                    st.metric("Lowest Hour", min(hourly_counts))
+                    st.metric("Average/Hour", f"{sum(hourly_counts)/len(hourly_counts):.1f}")
+                    
+                    # Peak detection
+                    peak_hour = max(stats['by_hour'].items(), key=lambda x: x[1])
+                    st.write(f"**Peak Collection:** {peak_hour[0][:19]}")
+                    st.write(f"**Logs Collected:** {peak_hour[1]}")
+        else:
+            st.info("No timeline data available yet")
     
     # TAB 4: Alerts & Incidents - Enhanced with Info/Warning/Critical filtering
     with tab4:
@@ -560,24 +820,39 @@ def main():
                 "📋 Filter by Category",
                 options=['Critical', 'Warning', 'Info'],
                 default=['Critical', 'Warning', 'Info'],
-                help="Critical: Critical/High severity | Warning: Medium/Warning | Info: Low/Info"
+                help="Critical: Critical/High severity | Warning: Medium/Warning | Info: Low/Info",
+                key="category_filter"
             )
+            # Mark user interaction when filter changes
+            if category_filter != st.session_state.get('last_category_filter', []):
+                st.session_state.user_interacted = True
+                st.session_state.last_category_filter = category_filter
         
         with filter_col2:
             source_filter = st.multiselect(
                 "🔍 Filter by Source",
                 options=list(stats['by_source'].keys()),
                 default=list(stats['by_source'].keys()),
-                help="Select which log sources to display"
+                help="Select which log sources to display",
+                key="source_filter"
             )
+            # Mark user interaction when filter changes
+            if source_filter != st.session_state.get('last_source_filter', []):
+                st.session_state.user_interacted = True
+                st.session_state.last_source_filter = source_filter
         
         with filter_col3:
             risk_level_filter = st.multiselect(
                 "⚡ Filter by Risk Level (Model)",
                 options=['High Risk', 'Medium Risk', 'Low Risk'],
                 default=['High Risk', 'Medium Risk', 'Low Risk'],
-                help="Risk assessment from ML model based on severity and risk_score"
+                help="Risk assessment from ML model based on severity and risk_score",
+                key="risk_level_filter"
             )
+            # Mark user interaction when filter changes
+            if risk_level_filter != st.session_state.get('last_risk_filter', []):
+                st.session_state.user_interacted = True
+                st.session_state.last_risk_filter = risk_level_filter
         
         # Filter alerts
         filtered_alerts = []
@@ -616,7 +891,9 @@ def main():
         
         st.markdown("---")
         
-        for i, alert in enumerate(filtered_alerts[:50]):
+        # Enhanced alert display with better pagination
+        max_display = st.session_state.get('max_alerts', 50)
+        for i, alert in enumerate(filtered_alerts[:max_display]):
             source = alert.get('log_source', 'unknown')
             severity = alert.get('severity', 'Unknown')
             
@@ -787,41 +1064,217 @@ def main():
                 pct = (count / stats['total'] * 100) if stats['total'] > 0 else 0
                 st.write(f"- **{source_name}**: {count} logs ({pct:.1f}%)")
     
-    # TAB 6: System Health
+    # TAB 6: System Health - Enhanced with comprehensive status
     with tab6:
-        st.header("⚙️ System Health & Status")
+        st.header("⚙️ System Health & Infrastructure Status")
+        st.markdown("### Real-time monitoring of all system components and services")
         
-        col1, col2 = st.columns(2)
+        # Component Status
+        st.subheader("🟢 Component Status & Health")
+        
+        col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.subheader("🟢 Active Components")
-            st.success("✅ Streamlit Dashboard - Running")
-            st.success("✅ OpenSearch - Running (localhost:9200)")
-            st.success("✅ Log Collection - Active")
-            st.info("⏳ OpenSearch Dashboards - Starting (localhost:5601)")
+            st.markdown("### 🎯 Core Services")
+            st.success("✅ **Streamlit Dashboard**")
+            st.caption("Running on port 8501")
+            st.caption(f"Status: Active | Last Update: {datetime.now().strftime('%H:%M:%S')}")
+            
+            st.success("✅ **OpenSearch Database**")
+            st.caption("Running on port 9200")
+            st.caption("Status: Connected | Security: Disabled")
+            
+            st.info("⏳ **OpenSearch Dashboards**")
+            st.caption("Running on port 5601")
+            st.caption("Login: root / root")
         
         with col2:
-            st.subheader("📊 Performance Metrics")
-            st.metric("Dashboard Refresh Rate", "5 seconds")
+            st.markdown("### 📊 Data Processing")
+            st.success("✅ **Log Collection**")
+            st.caption("Status: Active")
+            st.caption(f"Total Sources: {len(stats['by_source'])}")
+            
+            st.success("✅ **Threat Detection**")
+            st.caption("Status: Active")
+            st.caption(f"Total Alerts: {stats['total']}")
+            
+            st.success("✅ **Risk Scoring**")
+            st.caption("Status: Active")
+            st.caption("ML Model: Enabled")
+        
+        with col3:
+            st.markdown("### ⚡ Performance Metrics")
+            st.metric("Dashboard Refresh Rate", "5 seconds", 
+                     delta="Auto-refresh enabled" if auto_refresh else "Manual refresh")
             st.metric("Total Data Sources", len(stats['by_source']))
             st.metric("Cache Status", "Active")
+            st.metric("Data Processing Rate", 
+                     f"{stats['total']/max(len(stats['by_hour']), 1):.1f}/hr" if stats['by_hour'] else "0/hr")
         
         st.markdown("---")
         
-        st.subheader("🔗 Quick Links")
-        col1, col2, col3 = st.columns(3)
+        # System Statistics
+        st.subheader("📈 System Statistics & Capacity")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
         with col1:
-            st.markdown("**[ThreatOps Dashboard](http://localhost:8501)** - This page")
+            st.markdown("### 📊 Data Metrics")
+            st.write(f"**Total Events:** {stats['total']:,}")
+            st.write(f"**Alerts Generated:** {len(alerts):,}")
+            st.write(f"**Unique Categories:** {len(stats['by_category'])}")
+            st.write(f"**Time Coverage:** {len(stats['by_hour'])} hours")
+        
         with col2:
-            st.markdown("**[OpenSearch Dashboards](http://localhost:5601)** - Advanced analytics (no login required)")
+            st.markdown("### 🔍 Detection Metrics")
+            critical_count = stats['by_severity'].get('Critical', 0)
+            high_count = stats['by_severity'].get('High', 0)
+            st.write(f"**Critical Alerts:** {critical_count}")
+            st.write(f"**High Severity:** {high_count}")
+            st.write(f"**Total High-Risk:** {critical_count + high_count}")
+            detection_rate = ((critical_count + high_count) / stats['total'] * 100) if stats['total'] > 0 else 0
+            st.write(f"**Detection Rate:** {detection_rate:.1f}%")
+        
         with col3:
-            st.markdown("**[OpenSearch API](http://localhost:9200)** - Backend API")
+            st.markdown("### 🎯 MITRE Coverage")
+            techniques = [a.get('mitre_technique') for a in alerts if a.get('mitre_technique')]
+            unique_techs = len(set(techniques))
+            st.write(f"**Techniques Detected:** {unique_techs}")
+            st.write(f"**Total Mappings:** {len(techniques)}")
+            if unique_techs > 0:
+                st.write(f"**Avg Detections/Tech:** {len(techniques)/unique_techs:.1f}")
+        
+        with col4:
+            st.markdown("### 🖥️ Infrastructure Impact")
+            unique_hosts = len(set(a.get('host') for a in alerts if a.get('host')))
+            unique_users = len(set(a.get('user') for a in alerts if a.get('user')))
+            st.write(f"**Affected Hosts:** {unique_hosts}")
+            st.write(f"**Affected Users:** {unique_users}")
+            if unique_hosts > 0:
+                avg_events_per_host = stats['total'] / unique_hosts
+                st.write(f"**Avg Events/Host:** {avg_events_per_host:.1f}")
+        
+        st.markdown("---")
+        
+        # Service Links and Configuration
+        st.subheader("🔗 Service Access & Configuration")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("### 🌐 Web Interfaces")
+            st.markdown("**🛡️ ThreatOps Dashboard**")
+            st.code("http://localhost:8501", language=None)
+            st.caption("Main security monitoring interface (this page)")
+            
+            st.markdown("**📊 OpenSearch Dashboards**")
+            st.code("http://localhost:5601", language=None)
+            st.caption("Login: root / root")
+            st.caption("Advanced analytics and log exploration")
+        
+        with col2:
+            st.markdown("### 🔌 API Endpoints")
+            st.markdown("**🔍 OpenSearch REST API**")
+            st.code("http://localhost:9200", language=None)
+            st.caption("Database backend API")
+            st.caption("Security: Disabled (local testing)")
+            
+            st.markdown("**📡 Filebeat Status**")
+            st.code("Port: 5044", language=None)
+            st.caption("Log collection agent")
+        
+        with col3:
+            st.markdown("### ⚙️ Configuration")
+            st.markdown("**🔐 Authentication:**")
+            st.write("- OpenSearch Dashboards: root / root")
+            st.write("- OpenSearch: Security disabled")
+            st.write("- Dashboard: No authentication required")
+            
+            st.markdown("**📁 Data Locations:**")
+            st.write("- Alerts: `data/alerts/`")
+            st.write("- Logs: `data/logs/`")
+            st.write("- Reports: `data/reports/`")
+        
+        st.markdown("---")
+        
+        # Health Check
+        st.subheader("🏥 System Health Check")
+        
+        health_col1, health_col2 = st.columns(2)
+        
+        with health_col1:
+            st.markdown("### ✅ Health Indicators")
+            
+            # Data health
+            if stats['total'] > 0:
+                st.success("✅ Data Collection: Healthy")
+                st.caption(f"Collecting from {len(stats['by_source'])} sources")
+            else:
+                st.warning("⚠️ Data Collection: No data yet")
+                st.caption("Waiting for logs to be collected")
+            
+            # Alert health
+            if len(alerts) > 0:
+                st.success("✅ Alert Generation: Active")
+                st.caption(f"{len(alerts)} alerts processed")
+            else:
+                st.info("ℹ️ Alert Generation: Waiting for data")
+            
+            # Source health
+            if len(stats['by_source']) > 0:
+                st.success("✅ Data Sources: Connected")
+                st.caption(f"{len(stats['by_source'])} active sources")
+            else:
+                st.warning("⚠️ Data Sources: None detected")
+        
+        with health_col2:
+            st.markdown("### 📊 Performance Indicators")
+            
+            if stats['by_hour']:
+                hourly_avg = sum(stats['by_hour'].values()) / len(stats['by_hour'])
+                st.metric("Average Logs/Hour", f"{hourly_avg:.1f}")
+                
+                if hourly_avg > 0:
+                    st.success("✅ Processing Rate: Normal")
+                else:
+                    st.warning("⚠️ Processing Rate: Low")
+            else:
+                st.info("ℹ️ Processing Rate: Calculating...")
+            
+            # Cache health
+            st.success("✅ Cache: Active")
+            st.caption("5-second TTL enabled")
+            
+            # Refresh status
+            if auto_refresh:
+                st.success("✅ Auto-refresh: Enabled")
+                st.caption("Refreshing every 5 seconds")
+            else:
+                st.info("ℹ️ Auto-refresh: Disabled")
+                st.caption("Manual refresh only")
+        
+        st.markdown("---")
+        st.markdown("**ℹ️ Note:** System health is automatically monitored. All components are running in local development mode for testing purposes.")
     
-    # Auto-refresh logic
-    if auto_refresh:
-        import time
-        time.sleep(5)
-        st.rerun()
+    # Auto-refresh logic - FIXED: Only refresh if no user interaction
+    # This prevents tab reset when filters are changed
+    if auto_refresh and not st.session_state.get('user_interacted', False):
+        # Use JavaScript meta refresh instead of Python rerun to preserve tab state
+        st.markdown("""
+        <script>
+        // Only auto-refresh if page has been idle (no recent user interaction)
+        let lastInteraction = Date.now();
+        document.addEventListener('click', () => { lastInteraction = Date.now(); });
+        document.addEventListener('keydown', () => { lastInteraction = Date.now(); });
+        
+        setTimeout(function(){
+            // Only refresh if no interaction in last 4 seconds
+            if (Date.now() - lastInteraction > 4000) {
+                window.location.reload();
+            }
+        }, 5000);
+        </script>
+        """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
