@@ -52,135 +52,239 @@ Multi-Source Log Collection:
 ### Prerequisites
 
 - Python 3.8+
-- OpenSearch 3.3+ (included in D:\Cusor AI\opensearch-3.3.1-windows-x64)
-- OpenSearch Dashboards 3.3+ (included in D:\Cusor AI\opensearch-dashboards-3.3.0)
-- Filebeat 9.2+ (included in D:\Cusor AI\filebeat-9.2.0-windows-x86_64)
+- OpenSearch 3.3+
+- OpenSearch Dashboards 3.3+
+- Filebeat 9.2+
 
-**All prerequisites are already installed in your setup!**
-
-### One-Click Setup
-
-**Option 1: Double-click START.bat**
-
-Just double-click `START.bat` and everything starts automatically!
-
-**Option 2: Run from command line**
+### Installation
 
 ```bash
-python run.py --mode all
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Setup OpenSearch
+python run.py --setup
+
+# 3. Train ML model (optional but recommended)
+python run.py --train
+
+# 4. Update threat intelligence (optional)
+python run.py --update-intel
 ```
 
-This ONE command will:
-1. ✅ Start OpenSearch (database - port 9200)
-2. ✅ Start Filebeat (collects logs from 4 sources)
-3. ✅ Start OpenSearch Dashboards (analytics - port 5601)
-4. ✅ Run attack simulation (generates test threats)
-5. ✅ Run detection pipeline (analyzes ALL logs)
-6. ✅ Open ThreatOps Dashboard (main UI - port 8501)
+### One Command to Start Everything
 
-**That's it!** The system now monitors:
-- Real security events from your Windows system
-- Simulated attacks for testing
-- All displayed separately in the dashboard
-
-### Services Running
-
-After startup, you'll have access to:
-- **ThreatOps Dashboard**: http://localhost:8501 (Main Security Monitoring - opens automatically)
-- **OpenSearch Dashboards**: http://localhost:5601 (Advanced Analytics - no login required)
-- **OpenSearch API**: http://localhost:9200 (Backend - for developers)
-
-### Advanced Usage
-
-**Run individual components:**
 ```bash
-# Generate simulated attacks only
-python run.py --mode simulate
-
-# Run detection only
-python run.py --mode detect
-
-# Run full pipeline only (detect + enrich + score)
-python run.py --mode pipeline
-
-# Run continuously (every 60 seconds)
-python run.py --mode continuous
+python run.py --all
 ```
+
+This starts:
+1. ✅ OpenSearch (database - port 9200)
+2. ✅ Filebeat (log collector)
+3. ✅ OpenSearch Dashboards (analytics - port 5601)
+4. ✅ Attack simulation (test data)
+5. ✅ Detection pipeline (threat analysis)
+6. ✅ ThreatOps Dashboard (main UI - port 8501)
+
+All dashboards open automatically in your browser!
+
+### All Available Commands
+
+```bash
+# Complete System
+python run.py --all              # Start everything (recommended)
+
+# Attack Simulation
+python run.py --simulate         # Generate attack logs
+
+# Detection & Analysis
+python run.py --detect           # Run threat detection
+python run.py --enrich           # Enrich with threat intel
+python run.py --score            # Calculate risk scores
+python run.py --pipeline         # Full pipeline (detect → enrich → score)
+
+# Continuous Monitoring
+python run.py --continuous       # Run every 60 seconds
+python run.py --continuous --interval 120  # Custom interval
+
+# Dashboard Only
+python run.py --dashboard        # Start UI only
+
+# Setup & Maintenance
+python run.py --setup            # Setup OpenSearch
+python run.py --train            # Train ML model
+python run.py --update-intel     # Update threat intel database
+
+# Help
+python run.py --help             # Show all options
+```
+
+### Access Points
+
+After running `--all`:
+- **ThreatOps Dashboard**: http://localhost:8501 (Main SIEM interface)
+- **OpenSearch Dashboards**: http://localhost:5601 (Advanced analytics)
+- **OpenSearch API**: http://localhost:9200 (Backend API)
 
 ## Configuration
 
-Main configuration: `config/settings.yaml`
+All settings in: `application.py` → `Settings` class
 
-Key settings:
-- Detection rules and thresholds
-- Threat intelligence API keys (optional)
+### API Keys (Optional)
+Create `.env` file in project root:
+```
+VIRUSTOTAL_API_KEY=your_key_here
+ABUSEIPDB_API_KEY=your_key_here
+OTX_API_KEY=your_key_here
+```
+
+### Customization
+Edit `application.py` to configure:
+- Detection thresholds
 - ML model parameters
 - Risk scoring weights
+- Alert notification settings
 
-OpenSearch configuration: `../opensearch-3.3.1-windows-x64/opensearch-3.3.1/config/opensearch.yml`
-
-Filebeat configuration: `../filebeat-9.2.0-windows-x86_64/filebeat-9.2.0-windows-x86_64/filebeat.yml`
-
-## System Components
-
-### Attack Simulator
-- Generates 8 MITRE ATT&CK scenarios
-- Writes logs to `data/sim_attacks.log`
-- Filebeat collects logs automatically
-
-### Threat Detector
-- Reads logs from OpenSearch `filebeat-*` index
-- ML-based anomaly detection
-- Writes alerts to `security-alerts` index
-
-### Intel Enricher
-- Enriches alerts with threat intelligence
-- Uses local database + external APIs
-- Updates alerts in OpenSearch
-
-### Risk Scorer
-- Calculates risk scores based on:
-  - Alert severity
-  - Threat intel reputation
-  - MITRE technique criticality
-- Updates alerts with final scores
-
-## Project Structure
+## Project Structure (5-File Architecture)
 
 ```
 threat_ops/
-├── simulation/          # Attack simulator
-├── detection/           # Threat detector
-├── enrichment/          # Intel enricher
-├── scoring/             # Risk scorer
-├── dashboard/           # Streamlit dashboard
-├── config/              # Configuration files
-├── data/                # Logs, alerts, reports
-├── scripts/             # Setup and utility scripts
-├── run.py               # Main orchestrator
-└── START.bat            # One-click startup
+├── run.py                    # 🚀 Single entry point with CLI flags
+├── core_detection.py         # 🔍 Log collection, detection, enrichment, scoring
+├── reporting.py              # 📊 Reports, notifications, SOAR automation
+├── simulation.py             # 🎯 Attack simulation (MITRE ATT&CK)
+├── utilities.py              # ⚙️ Setup, model training, intel updates
+├── application.py            # 🖥️ Dashboard UI & configuration
+├── requirements.txt          # 📦 Python dependencies
+├── README.md                 # 📖 Main documentation
+├── TROUBLESHOOTING.md        # 🔧 Comprehensive troubleshooting guide
+├── tests/                    # 🧪 Test suite
+│   ├── __init__.py          # Package initialization
+│   ├── conftest.py          # Pytest configuration & fixtures
+│   ├── run_tests.py         # Test runner script
+│   ├── test_core_detection.py  # Tests for core_detection.py
+│   ├── test_simulation.py   # Tests for simulation.py
+│   ├── test_reporting.py    # Tests for reporting.py
+│   ├── test_utilities.py    # Tests for utilities.py
+│   └── test_integration.py  # End-to-end integration tests
+├── data/                     # 📁 Logs and simulation data
+├── models/                   # 🤖 ML models
+├── reports/                  # 📄 Generated reports
+└── logs/                     # 📋 Application logs
+    └── threat_ops.log
 ```
+
+## Core Components
+
+### 1. Log Collection & Detection (core_detection.py)
+- Standardizes log entries from multiple sources
+- ML-based anomaly detection (Isolation Forest)
+- Rule-based threat detection
+- MITRE ATT&CK mapping
+
+### 2. Threat Intelligence (core_detection.py)
+- Local SQLite database
+- External APIs: VirusTotal, AbuseIPDB, AlienVault OTX
+- Automatic enrichment of IPs, domains, hashes
+
+### 3. Risk Scoring (core_detection.py)
+- Dynamic scoring based on:
+  - Alert severity
+  - Threat intel reputation
+  - Attack frequency
+  - MITRE technique criticality
+
+### 4. Reporting & Automation (reporting.py)
+- HTML, PDF, JSON reports
+- Email, Slack, webhook notifications
+- SOAR actions: IP blocking, account disabling, host quarantine
+
+### 5. Attack Simulation (simulation.py)
+- 8 MITRE ATT&CK scenarios
+- Realistic log generation
+- Test data for detection validation
 
 ## OpenSearch Indices
 
 - `filebeat-*`: Raw logs collected by Filebeat
 - `security-alerts`: Generated alerts with enrichment and scores
 
+## Testing
+
+### Run All Tests
+
+```bash
+# Using pytest
+pytest
+
+# Using test runner
+python tests/run_tests.py
+```
+
+### Run Specific Tests
+
+```bash
+# Test specific module
+pytest tests/test_core_detection.py
+pytest tests/test_simulation.py
+pytest tests/test_reporting.py
+
+# Integration tests
+pytest tests/test_integration.py
+
+# With coverage
+pytest --cov=. --cov-report=term-missing
+```
+
+### Test Runner Options
+
+```bash
+python tests/run_tests.py all          # Run all tests
+python tests/run_tests.py integration  # Integration tests only
+python tests/run_tests.py coverage     # With coverage report
+python tests/run_tests.py test_core_detection  # Specific test file
+```
+
+### Test Categories
+
+The test suite includes:
+- **Unit Tests**: Individual component testing (LogCollector, ThreatDetector, etc.)
+- **Integration Tests**: End-to-end workflow testing (Simulation → Detection → Reporting)
+- **Edge Cases**: Error handling, invalid inputs, system resilience
+
 ## Troubleshooting
 
+### Quick Fixes
+
 **OpenSearch not connecting:**
-- Verify OpenSearch is running: http://localhost:9200
-- Check security is disabled: `plugins.security.disabled: true` in opensearch.yml
+```bash
+# Check if running
+curl http://localhost:9200
 
-**No logs in OpenSearch:**
-- Check Filebeat is running
-- Verify `data/sim_attacks.log` exists
-- Check Filebeat configuration paths
+# Verify security is disabled in opensearch.yml
+plugins.security.disabled: true
+```
 
-**No alerts generated:**
-- Run simulation first: `python run.py --mode simulate`
-- Check logs exist in OpenSearch: `filebeat-*` index
-- Run detection: `python run.py --mode detect`
+**No logs appearing:**
+```bash
+# 1. Run simulation
+python run.py --simulate
+
+# 2. Wait 15 seconds for indexing
+
+# 3. Run detection
+python run.py --detect
+```
+
+**Dashboard issues:**
+- Check logs: `logs/threat_ops.log`
+- Restart: Press Ctrl+C and run `python run.py --all` again
+
+### Complete Troubleshooting Guide
+
+For detailed troubleshooting including OpenSearch login issues, service startup problems, and more:
+
+📖 **See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)** for comprehensive solutions
 
 ## License
 
