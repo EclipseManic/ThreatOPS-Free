@@ -1,3 +1,0 @@
-Oct 26 16:47:47 linux-server sshd[1234]: Failed password for root from 192.168.1.200 port 22
-Oct 26 16:47:47 linux-server sshd[1235]: Accepted password for admin from 192.168.1.200 port 22
-Oct 26 16:47:47 linux-server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; COMMAND=/bin/ls
